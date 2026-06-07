@@ -2,7 +2,7 @@
 
 **Headless WooCommerce storefront.** WordPress + WooCommerce powers the catalogue; a Next.js frontend consumes it over WPGraphQL. Ships with a curated mock catalogue so the demo works without a live WordPress backend.
 
-**Live demo:** https://haquemart.vercel.app
+**Live demo:** https://campcreekmarket.com
 
 ## Stack
 

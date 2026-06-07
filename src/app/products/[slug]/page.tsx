@@ -35,7 +35,7 @@ export default async function HomePage({ searchParams }: Props) {
   if (isWpConfigured()) {
     try {
       const [productsResult, categoryNames] = await Promise.all([
-        getProducts({ first: 12, category, search: searchQuery }),
+        getProducts({ first: 12, category }),
         getCategories(),
       ]);
 
