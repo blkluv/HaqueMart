@@ -26,7 +26,7 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="shrink-0">
           <span className="text-lg font-bold tracking-tight">
-            Haque<span className="text-primary">Mart</span>
+            CampCreek<span className="text-primary">Market</span>
           </span>
         </Link>
 
