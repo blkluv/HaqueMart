@@ -1,9 +1,5 @@
 const endpoint = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ?? "";
 
-export function isWpConfigured(): boolean {
-  return Boolean(endpoint);
-}
-
 export async function wpgql<T>(
   query: string,
   variables: Record<string, unknown> = {},
@@ -16,6 +12,7 @@ export async function wpgql<T>(
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",   // ← add this line
     body: JSON.stringify({ query, variables }),
     next: { revalidate },
   });
