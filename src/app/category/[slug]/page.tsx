@@ -1,3 +1,4 @@
+import { ProductGrid } from "@/components/ProductGrid"; // adjust path if needed
 import { getProducts } from "@/lib/graphql/products";
 
 interface Props {
