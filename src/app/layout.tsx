@@ -14,7 +14,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "HaqueMart — Quality goods, delivered",
+  title: "Camp Creek Market — Camp Creek Area Shopify-like marketplace",
   description:
     "A modern headless WooCommerce storefront. Browse our curated collection of quality products.",
 };
@@ -112,7 +112,7 @@ function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} HaqueMart. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Camp Creek Market. All rights reserved.</p>
           <div className="flex gap-4">
             {["Privacy Policy", "Terms of Service", "Cookie Policy"].map((l) => (
               <a key={l} href="#" className="hover:text-foreground transition-colors">{l}</a>

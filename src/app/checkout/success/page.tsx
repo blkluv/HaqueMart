@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { OrderConfirmation } from "./OrderConfirmation";
 
 export const metadata: Metadata = {
-  title: "Order confirmed — HaqueMart",
+  title: "Order confirmed — Camp Creek Market",
 };
 
 interface Props {

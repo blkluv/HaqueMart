@@ -20,22 +20,28 @@ export function ProductGrid({
   initialEndCursor,
   category,
 }: Props) {
-  const [products, setProducts] = useState(initialProducts);
-  const [hasNextPage, setHasNextPage] = useState(initialHasNextPage);
-  const [cursor, setCursor] = useState(initialEndCursor);
+  const [products, setProducts] = useState<ProductListItem[]>(initialProducts);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(initialHasNextPage);
+  const [cursor, setCursor] = useState<string | null>(initialEndCursor);
   const [isPending, startTransition] = useTransition();
 
   function loadMore() {
     if (!cursor) return;
+
     startTransition(async () => {
-      const result = await fetchMoreProducts(cursor, category);
-      setProducts((prev) => [...prev, ...result.nodes]);
-      setHasNextPage(result.hasNextPage);
-      setCursor(result.endCursor);
+      try {
+        const result = await fetchMoreProducts(cursor, category);
+
+        setProducts((prev) => [...prev, ...(result?.nodes ?? [])]);
+        setHasNextPage(Boolean(result?.hasNextPage));
+        setCursor(result?.endCursor ?? null);
+      } catch (err) {
+        console.error("Failed to load more products:", err);
+      }
     });
   }
 
-  if (products.length === 0) {
+  if (!products || products.length === 0) {
     return (
       <p className="py-20 text-center text-muted-foreground">
         No products found.

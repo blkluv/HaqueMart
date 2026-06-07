@@ -3,7 +3,7 @@ import { isWpConfigured } from "@/lib/graphql/client";
 import { getProducts } from "@/lib/graphql/products";
 import { MOCK_PRODUCTS } from "@/lib/mock-data";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://haquemart.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://campcreekmarket.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let slugs: string[] = [];

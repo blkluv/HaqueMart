@@ -30,9 +30,10 @@ export default function CheckoutPage() {
     lastName: "",
     address1: "",
     address2: "",
-    city: "",
+    city: "Atlanta",      // forced to Atlanta
+    state: "GA",          // Georgia
     postcode: "",
-    country: "United Kingdom",
+    country: "United States",
   });
 
   useEffect(() => {
@@ -46,13 +47,32 @@ export default function CheckoutPage() {
     }
   }, [mounted, cart.items.length, placing, router]);
 
-  function set<K extends keyof typeof form>(field: K) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [field]: e.target.value }));
+  function setField<K extends keyof typeof form>(field: K) {
+    return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      let value = e.target.value;
+      // If city field, force to "Atlanta" (case‑insensitive, trim spaces)
+      if (field === 'city') {
+        const trimmed = value.trim();
+        if (trimmed.toLowerCase() !== 'atlanta') {
+          // Optionally show an error – but we'll just reject non-Atlanta
+          // For better UX, we could show a toast, but simplest: reset to Atlanta
+          value = 'Atlanta';
+        } else {
+          // Normalize capitalization
+          value = 'Atlanta';
+        }
+      }
+      setForm((f) => ({ ...f, [field]: value }));
+    };
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Extra validation: ensure city is exactly Atlanta
+    if (form.city.toLowerCase() !== 'atlanta') {
+      alert('Sorry, shipping is only available within Atlanta, GA.');
+      return;
+    }
     setPlacing(true);
     await new Promise((res) => setTimeout(res, 1600));
     const orderId = generateOrderId();
@@ -80,8 +100,13 @@ export default function CheckoutPage() {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]"
       >
-        {/* ── Left — Shipping form ───────────────────────────── */}
+        {/* Left — Shipping form (Atlanta‑only) */}
         <div className="flex flex-col gap-8">
+          {/* Atlanta shipping notice */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            📦 We currently ship <strong>only within Atlanta, GA</strong>. Thank you for supporting local!
+          </div>
+
           {/* Contact */}
           <section>
             <h2 className="mb-4 text-base font-semibold">Contact</h2>
@@ -93,15 +118,15 @@ export default function CheckoutPage() {
                 autoComplete="email"
                 placeholder="you@example.com"
                 value={form.email}
-                onChange={set("email")}
+                onChange={setField("email")}
                 className={inputClass}
               />
             </div>
           </section>
 
-          {/* Shipping address */}
+          {/* Shipping address — Atlanta only */}
           <section>
-            <h2 className="mb-4 text-base font-semibold">Shipping address</h2>
+            <h2 className="mb-4 text-base font-semibold">Shipping address (Atlanta only)</h2>
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -110,9 +135,9 @@ export default function CheckoutPage() {
                     type="text"
                     required
                     autoComplete="given-name"
-                    placeholder="Abdur"
+                    placeholder="John"
                     value={form.firstName}
-                    onChange={set("firstName")}
+                    onChange={setField("firstName")}
                     className={inputClass}
                   />
                 </div>
@@ -122,9 +147,9 @@ export default function CheckoutPage() {
                     type="text"
                     required
                     autoComplete="family-name"
-                    placeholder="Haque"
+                    placeholder="Doe"
                     value={form.lastName}
-                    onChange={set("lastName")}
+                    onChange={setField("lastName")}
                     className={inputClass}
                   />
                 </div>
@@ -136,9 +161,9 @@ export default function CheckoutPage() {
                   type="text"
                   required
                   autoComplete="address-line1"
-                  placeholder="123 High Street"
+                  placeholder="123 Peachtree Street"
                   value={form.address1}
-                  onChange={set("address1")}
+                  onChange={setField("address1")}
                   className={inputClass}
                 />
               </div>
@@ -153,9 +178,9 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   autoComplete="address-line2"
-                  placeholder="Flat 4B"
+                  placeholder="Apt 4B"
                   value={form.address2}
-                  onChange={set("address2")}
+                  onChange={setField("address2")}
                   className={inputClass}
                 />
               </div>
@@ -166,48 +191,56 @@ export default function CheckoutPage() {
                   <input
                     type="text"
                     required
-                    autoComplete="address-level2"
-                    placeholder="London"
                     value={form.city}
-                    onChange={set("city")}
+                    onChange={setField("city")}
                     className={inputClass}
+                    readOnly
+                    disabled
+                    placeholder="Atlanta (only)"
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">Only Atlanta is eligible for delivery.</p>
                 </div>
                 <div>
-                  <label className={labelClass}>Postcode</label>
+                  <label className={labelClass}>State</label>
                   <input
                     type="text"
                     required
-                    autoComplete="postal-code"
-                    placeholder="SW1A 1AA"
-                    value={form.postcode}
-                    onChange={set("postcode")}
-                    className={inputClass}
+                    value="Georgia"
+                    disabled
+                    className={`${inputClass} bg-muted`}
                   />
+                  <input type="hidden" name="state" value="GA" />
                 </div>
               </div>
 
               <div>
-                <label className={labelClass}>Country</label>
-                <select
-                  value={form.country}
-                  onChange={set("country")}
+                <label className={labelClass}>ZIP / Postal code</label>
+                <input
+                  type="text"
+                  required
+                  autoComplete="postal-code"
+                  placeholder="30303"
+                  value={form.postcode}
+                  onChange={setField("postcode")}
                   className={inputClass}
-                >
-                  <option>United Kingdom</option>
-                  <option>United States</option>
-                  <option>Canada</option>
-                  <option>Australia</option>
-                  <option>France</option>
-                  <option>Germany</option>
-                  <option>Ireland</option>
-                </select>
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Country</label>
+                <input
+                  type="text"
+                  required
+                  value="United States"
+                  disabled
+                  className={`${inputClass} bg-muted`}
+                />
               </div>
             </div>
           </section>
         </div>
 
-        {/* ── Right — Order summary ──────────────────────────── */}
+        {/* Right — Order summary (unchanged) */}
         <aside className="flex h-fit flex-col gap-4 rounded-xl border border-border bg-card p-6 lg:sticky lg:top-24">
           <h2 className="font-semibold">Order summary</h2>
 
@@ -251,7 +284,7 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span className="text-muted-foreground">Calculated at dispatch</span>
+              <span className="text-muted-foreground">Calculated at dispatch (Atlanta only)</span>
             </div>
           </div>
 
@@ -271,7 +304,7 @@ export default function CheckoutPage() {
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Demo storefront — no real payment will be processed.
+            Demo storefront — no real payment will be processed. Shipping only within Atlanta, GA.
           </p>
         </aside>
       </form>

@@ -31,8 +31,8 @@ export function OrderConfirmation({ orderId }: Props) {
       <h1 className="mb-3 text-2xl font-bold">Order confirmed!</h1>
 
       <p className="mb-2 text-muted-foreground">
-        Thanks for shopping with HaqueMart. We&apos;ve received your order and
-        will be in touch once it ships.
+        Thanks for shopping with Camp Creek Market. We&apos;ve received your order and
+        will be in touch once it is ready for delivery or pickup.
       </p>
 
       <p className="mb-10 text-sm text-muted-foreground">
