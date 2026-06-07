@@ -1,32 +1,48 @@
 import { HeroSection } from "@/components/HeroSection";
 import { ProductGrid } from "@/components/ProductGrid";
 import { NewsletterSection } from "@/components/NewsletterSection";
-import { MOCK_CATEGORIES } from "@/lib/mock-data";
-import { use } from "react";
+import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/lib/mock-data";
 import { getWooProducts } from "@/lib/rest/products";
 
-interface Props {
-  searchParams: Promise<{
-    category?: string;
-  }>;
-}
+export default async function HomePage({ searchParams }: any) {
+  const category = searchParams?.category;
 
-export default async function HomePage({ searchParams }: Props) {
-  const params = use(searchParams);
-  const category = params?.category;
+  let products = MOCK_PRODUCTS;
 
-  const allProducts = await getWooProducts();
+  try {
+    const woo = await getWooProducts();
 
-  // normalize WooCommerce categories (basic slug match fallback)
+    if (Array.isArray(woo)) {
+      products = woo.map((p: any) => ({
+        id: String(p.id),
+        name: p.name,
+        slug: p.slug,
+        price: p.price,
+        image: {
+          sourceUrl: p.images?.[0]?.src ?? "",
+          altText: p.name,
+        },
+        productCategories: {
+          nodes: p.categories?.map((c: any) => ({
+            name: c.name,
+            slug: c.slug,
+          })) ?? [],
+        },
+      }));
+    }
+  } catch {
+    // fallback silently to mock
+  }
+
   const filteredProducts = category
-    ? allProducts.filter((p: any) =>
-        p.categories?.some(
-          (c: any) =>
+    ? products.filter((p) =>
+        p.productCategories.nodes.some(
+          (c) =>
             c.slug === category ||
-            c.name?.toLowerCase() === category
+            c.name.toLowerCase() === category
         )
       )
-    : allProducts;
+    : products;
 
   const activeCategory = category ?? null;
 
@@ -45,10 +61,8 @@ export default async function HomePage({ searchParams }: Props) {
       <div className="flex flex-wrap gap-2 justify-center">
         <a
           href="/"
-          className={`rounded-full border px-4 py-1.5 text-sm transition ${
-            !activeCategory
-              ? "bg-orange-500 text-white border-orange-500"
-              : ""
+          className={`rounded-full border px-4 py-1.5 text-sm ${
+            !activeCategory ? "bg-orange-500 text-white" : ""
           }`}
         >
           All
@@ -56,16 +70,15 @@ export default async function HomePage({ searchParams }: Props) {
 
         {MOCK_CATEGORIES.map((cat) => {
           const slug = cat.toLowerCase().replace(/\s+/g, "-");
-          const isActive = activeCategory === slug;
 
           return (
             <a
               key={cat}
               href={`/?category=${slug}`}
-              className={`rounded-full border px-4 py-1.5 text-sm transition ${
-                isActive
-                  ? "bg-orange-500 text-white border-orange-500"
-                  : "hover:bg-muted"
+              className={`rounded-full border px-4 py-1.5 text-sm ${
+                activeCategory === slug
+                  ? "bg-orange-500 text-white"
+                  : ""
               }`}
             >
               {cat}
