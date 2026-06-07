@@ -1,28 +1,21 @@
-import { wpRest } from "./client";
-import type { ProductListItem } from "@/types";
+const auth = Buffer.from(
+  `${process.env.WOOCOMMERCE_KEY}:${process.env.WOOCOMMERCE_SECRET}`
+).toString("base64");
 
-export async function getRestProducts(): Promise<ProductListItem[]> {
-  const data = await wpRest<any[]>("/wp/v2/product?per_page=12");
+export async function getWooProducts() {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_WP_REST_URL}/wc/v3/products?per_page=12`,
+    {
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+      cache: "no-store",
+    }
+  );
 
-  return data.map((p) => ({
-    id: String(p.id),
-    databaseId: p.id,
-    name: p.title.rendered,
-    slug: p.slug,
-    price: p.price ?? "",
-    regularPrice: "",
-    salePrice: null,
-    stockStatus: "IN_STOCK",
-    image: {
-      sourceUrl: p.featured_media_url ?? "",
-      altText: p.title.rendered,
-    },
-    productCategories: {
-      nodes: [],
-    },
-    rating: 0,
-    reviewCount: 0,
-    soldThisWeek: 0,
-    stockCount: 0,
-  }));
+  if (!res.ok) {
+    throw new Error("WooCommerce API failed");
+  }
+
+  return res.json();
 }
