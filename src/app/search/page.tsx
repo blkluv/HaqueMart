@@ -1,16 +1,19 @@
-import { getProducts } from "@/lib/graphql/products";
 import { ProductGrid } from "@/components/ProductGrid";
+import { getProducts } from "@/lib/graphql/products";
+
+export const dynamic = "force-dynamic";
 
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const query = searchParams.q ?? "";
- 
- const results = await getProducts({
-  first: 24,
-});
+  const params = await searchParams;
+  const query = params.q ?? "";
+
+  const results = await getProducts({
+    first: 24,
+  });
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
