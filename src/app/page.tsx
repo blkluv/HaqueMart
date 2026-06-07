@@ -27,9 +27,9 @@ export default async function HomePage({ searchParams }: Props) {
         name: p.name,
         slug: p.slug,
 
-        price: p.price ? `$${p.price}` : "$0",
-        regularPrice: p.regular_price ? `$${p.regular_price}` : "$0",
-        salePrice: p.sale_price ? `$${p.sale_price}` : null,
+        price: p.price ? `£${p.price}` : "£0",
+        regularPrice: p.regular_price ? `£${p.regular_price}` : "£0",
+        salePrice: p.sale_price ? `£${p.sale_price}` : null,
 
         stockStatus: p.stock_status?.toUpperCase() ?? "IN_STOCK",
 
