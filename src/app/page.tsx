@@ -1,8 +1,9 @@
 import { HeroSection } from "@/components/HeroSection";
 import { ProductGrid } from "@/components/ProductGrid";
 import { NewsletterSection } from "@/components/NewsletterSection";
-import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/lib/mock-data";
+import { MOCK_CATEGORIES } from "@/lib/mock-data";
 import { use } from "react";
+import { getWooProducts } from "@/lib/rest/products";
 
 interface Props {
   searchParams: Promise<{
@@ -10,17 +11,22 @@ interface Props {
   }>;
 }
 
-export default function HomePage({ searchParams }: Props) {
+export default async function HomePage({ searchParams }: Props) {
   const params = use(searchParams);
   const category = params?.category;
 
+  const allProducts = await getWooProducts();
+
+  // normalize WooCommerce categories (basic slug match fallback)
   const filteredProducts = category
-    ? MOCK_PRODUCTS.filter((p) =>
-        p.productCategories.nodes.some(
-          (c) => c.slug === category || c.name.toLowerCase() === category
+    ? allProducts.filter((p: any) =>
+        p.categories?.some(
+          (c: any) =>
+            c.slug === category ||
+            c.name?.toLowerCase() === category
         )
       )
-    : MOCK_PRODUCTS;
+    : allProducts;
 
   const activeCategory = category ?? null;
 
@@ -40,7 +46,9 @@ export default function HomePage({ searchParams }: Props) {
         <a
           href="/"
           className={`rounded-full border px-4 py-1.5 text-sm transition ${
-            !activeCategory ? "bg-orange-500 text-white border-orange-500" : ""
+            !activeCategory
+              ? "bg-orange-500 text-white border-orange-500"
+              : ""
           }`}
         >
           All
