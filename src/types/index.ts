@@ -16,7 +16,7 @@ export interface ProductListItem {
   databaseId: number;
   name: string;
   slug: string;
-  /** Formatted price string from WooCommerce, e.g. "£29.99" */
+  /** Formatted price string from WooCommerce, e.g. "$29.99" */
   price: string | null;
   regularPrice: string | null;
   salePrice: string | null;
@@ -65,7 +65,7 @@ export interface CartItem {
   slug: string;
   /** Numeric price for calculations, e.g. 29.99 */
   price: number;
-  /** Display string, e.g. "£29.99" */
+  /** Display string, e.g. "$29.99" */
   priceFormatted: string;
   quantity: number;
   image: WPImage | null;

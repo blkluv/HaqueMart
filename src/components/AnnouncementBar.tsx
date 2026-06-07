@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const MESSAGES = [
-  "🎉 Free shipping on orders over £50 — limited time only",
+  "🎉 Free shipping on orders over $50 — limited time only",
   "⚡ Flash sale live now — up to 30% off selected items",
   "🛍️ New arrivals just dropped — shop the latest collection",
 ];

@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
  * Strips HTML entities and currency symbols from a WooCommerce price string
  * and returns a numeric float. Returns 0 for null/empty input.
  *
- * Examples: "£29.99" → 29.99  |  "$1,299.00" → 1299.00
+ * Examples: "$29.99" → 29.99  |  "$1,299.00" → 1299.00
  */
 export function parsePrice(priceStr: string | null | undefined): number {
   if (!priceStr) return 0;

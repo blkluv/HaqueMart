@@ -167,7 +167,7 @@ export function ProductCard({ product }: Props) {
               name: product.name,
               slug: product.slug,
               price: parsePrice(product.price ?? product.regularPrice),
-              priceFormatted: product.price ?? product.regularPrice ?? "£0",
+              priceFormatted: product.price ?? product.regularPrice ?? "$0",
               image: product.image,
             }}
             disabled={isOutOfStock}

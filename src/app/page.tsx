@@ -2,7 +2,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { ProductGrid } from "@/components/ProductGrid";
 import { NewsletterSection } from "@/components/NewsletterSection";
 import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/lib/mock-data";
-import { use } from "react";
+import { getWooProducts } from "@/lib/rest/products";
 
 interface Props {
   searchParams: Promise<{
@@ -10,17 +10,61 @@ interface Props {
   }>;
 }
 
-export default function HomePage({ searchParams }: Props) {
-  const params = use(searchParams);
+export default async function HomePage({ searchParams }: Props) {
+  const params = await searchParams;
   const category = params?.category;
 
+  let products = MOCK_PRODUCTS;
+
+  try {
+    const woo = await getWooProducts();
+
+    if (Array.isArray(woo)) {
+      products = woo.map((p: any) => ({
+        id: String(p.id),
+        databaseId: p.id,
+
+        name: p.name,
+        slug: p.slug,
+
+        price: p.price ? `$${p.price}` : "$0",
+        regularPrice: p.regular_price ? `$${p.regular_price}` : "$0",
+        salePrice: p.sale_price ? `$${p.sale_price}` : null,
+
+        stockStatus: p.stock_status?.toUpperCase() ?? "IN_STOCK",
+
+        image: {
+          sourceUrl: p.images?.[0]?.src ?? "",
+          altText: p.name ?? "",
+        },
+
+        productCategories: {
+          nodes: (p.categories ?? []).map((c: any) => ({
+            name: c.name,
+            slug: c.slug,
+          })),
+        },
+
+        rating: Number(p.average_rating ?? 0),
+        reviewCount: Number(p.rating_count ?? 0),
+        soldThisWeek: 0,
+        stockCount: p.stock_quantity ?? 0,
+      }));
+    }
+  } catch (err) {
+    // fallback to mock silently
+    console.log("WooCommerce fallback:", err);
+  }
+
   const filteredProducts = category
-    ? MOCK_PRODUCTS.filter((p) =>
+    ? products.filter((p) =>
         p.productCategories.nodes.some(
-          (c) => c.slug === category || c.name.toLowerCase() === category
+          (c) =>
+            c.slug === category ||
+            c.name.toLowerCase() === category
         )
       )
-    : MOCK_PRODUCTS;
+    : products;
 
   const activeCategory = category ?? null;
 
@@ -40,7 +84,9 @@ export default function HomePage({ searchParams }: Props) {
         <a
           href="/"
           className={`rounded-full border px-4 py-1.5 text-sm transition ${
-            !activeCategory ? "bg-orange-500 text-white border-orange-500" : ""
+            !activeCategory
+              ? "bg-orange-500 text-white border-orange-500"
+              : ""
           }`}
         >
           All
