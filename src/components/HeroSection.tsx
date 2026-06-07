@@ -165,7 +165,7 @@ export function HeroSection() {
           <div className="relative mx-auto max-w-xs md:max-w-sm">
             <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent blur-2xl" />
             <Image
-              src="/hero-image.png"
+              src="/camp-creek-market-shop.png"
               alt="Curated lifestyle products"
               width={500}
               height={500}
