@@ -2,6 +2,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { ProductGrid } from "@/components/ProductGrid";
 import { NewsletterSection } from "@/components/NewsletterSection";
 import { MOCK_PRODUCTS, MOCK_CATEGORIES } from "@/lib/mock-data";
+import { use } from "react";
 
 interface Props {
   searchParams: Promise<{
@@ -9,14 +10,19 @@ interface Props {
   }>;
 }
 
-export default async function HomePage({ searchParams }: Props) {
-  const { category } = await searchParams;
+export default function HomePage({ searchParams }: Props) {
+  const params = use(searchParams);
+  const category = params?.category;
 
   const filteredProducts = category
     ? MOCK_PRODUCTS.filter((p) =>
-        p.productCategories.nodes.some((c) => c.slug === category)
+        p.productCategories.nodes.some(
+          (c) => c.slug === category || c.name.toLowerCase() === category
+        )
       )
     : MOCK_PRODUCTS;
+
+  const activeCategory = category ?? null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 flex flex-col gap-16">
@@ -34,9 +40,7 @@ export default async function HomePage({ searchParams }: Props) {
         <a
           href="/"
           className={`rounded-full border px-4 py-1.5 text-sm transition ${
-            !category
-              ? "bg-orange-500 text-white border-orange-500"
-              : "hover:border-orange-400 hover:text-orange-500"
+            !activeCategory ? "bg-orange-500 text-white border-orange-500" : ""
           }`}
         >
           All
@@ -44,7 +48,7 @@ export default async function HomePage({ searchParams }: Props) {
 
         {MOCK_CATEGORIES.map((cat) => {
           const slug = cat.toLowerCase().replace(/\s+/g, "-");
-          const isActive = category === slug;
+          const isActive = activeCategory === slug;
 
           return (
             <a
@@ -53,7 +57,7 @@ export default async function HomePage({ searchParams }: Props) {
               className={`rounded-full border px-4 py-1.5 text-sm transition ${
                 isActive
                   ? "bg-orange-500 text-white border-orange-500"
-                  : "hover:border-orange-400 hover:text-orange-500"
+                  : "hover:bg-muted"
               }`}
             >
               {cat}
