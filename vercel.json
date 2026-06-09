@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/products/export",
+      "destination": "http://api.campcreekmarket.com/export-products.php"
+    }
+  ]
+}

@@ -1,10 +1,11 @@
 import type { ProductListItem, Product, MockReview } from "@/types";
+import Stripe from "stripe";
 
+// ── Placeholder images (replace these with your own custom image URLs) ─────────
 const placeholder = (seed: string) =>
   `https://picsum.photos/seed/${seed}/800/600`;
 
-// ── Shared review pool ────────────────────────────────────────────────────────
-
+// ── Shared review pool (unchanged) ────────────────────────────────────────────
 const REVIEWS: Record<string, MockReview[]> = {
   "mock-1": [
     { id: "r1a", author: "Sarah M.", rating: 5, date: "12 May 2026", verified: true, body: "Perfect everyday bag! The canvas quality is excellent and it holds so much more than you'd expect. Three months in and it still looks brand new — absolutely worth every penny." },
@@ -48,8 +49,7 @@ const REVIEWS: Record<string, MockReview[]> = {
   ],
 };
 
-// ── Product listings ──────────────────────────────────────────────────────────
-
+// ── Product listings (keep your original MOCK_PRODUCTS) ────────────────────────
 export const MOCK_PRODUCTS: ProductListItem[] = [
   {
     id: "mock-1", databaseId: 1,
@@ -125,6 +125,7 @@ export const MOCK_PRODUCTS: ProductListItem[] = [
   },
 ];
 
+// ── Mapped product details (kept as is) ────────────────────────────────────────
 export const MOCK_PRODUCT_MAP: Record<string, Product> = Object.fromEntries(
   MOCK_PRODUCTS.map((p) => [
     p.slug,
@@ -141,5 +142,111 @@ export const MOCK_PRODUCT_MAP: Record<string, Product> = Object.fromEntries(
 );
 
 export const MOCK_CATEGORIES = [
-  "Bags", "Kitchen", "Home Office", "Clothing", "Home", "Outdoors", "Stationery",
+  "Driver", "Delivery", "Shoes", "Clothing", "Rentals", "Services", "Boost My Biz",
 ];
+
+// ────────────── NEW: Stripe helper functions (added below) ─────────────────────
+
+/**
+ * Converts a price string like "$24.99" into an amount in cents.
+ */
+function parsePriceToCents(priceString: string | null | undefined): number | null {
+  if (!priceString) return null;
+  const match = priceString.match(/\d+(?:\.\d{1,2})?/);
+  if (!match) return null;
+  const dollars = parseFloat(match[0]);
+  return Math.round(dollars * 100);
+}
+
+/**
+ * Generates Stripe product parameters from your mock product.
+ * Uses the existing `image.sourceUrl` (which you can later replace with a custom image).
+ */
+export function mockToStripeProduct(mockProduct: ProductListItem): Stripe.ProductCreateParams {
+  return {
+    id: mockProduct.id,                     // custom product ID (e.g., "mock-1")
+    name: mockProduct.name,
+    description: `A beautifully crafted ${mockProduct.name.toLowerCase()}. Made with quality materials and designed to last.`,
+    metadata: {
+      slug: mockProduct.slug,
+      databaseId: String(mockProduct.databaseId),
+      stockCount: String(mockProduct.stockCount ?? 0),
+      stockStatus: mockProduct.stockStatus,
+      badge: mockProduct.badge ?? '',
+      soldThisWeek: String(mockProduct.soldThisWeek ?? 0),
+      categories: mockProduct.productCategories.nodes.map(c => c.name).join(',')
+    },
+    images: [mockProduct.image.sourceUrl],   // unique per product (replace with your own URLs)
+    tax_code: 'txcd_10000000',
+    active: true,
+    shippable: true,
+    url: `https://yourstore.com/product/${mockProduct.slug}`
+  };
+}
+
+/**
+ * Generates one or two Stripe price parameters for a product.
+ */
+export function mockToStripePrices(mockProduct: ProductListItem): Stripe.PriceCreateParams[] {
+  const regularCents = parsePriceToCents(mockProduct.regularPrice);
+  const saleCents = parsePriceToCents(mockProduct.salePrice);
+  
+  if (!regularCents) return [];
+
+  const prices: Stripe.PriceCreateParams[] = [];
+
+  prices.push({
+    product: mockProduct.id,
+    currency: 'usd',
+    unit_amount: regularCents,
+    nickname: 'Regular price',
+    active: true,
+    metadata: { type: 'regular' }
+  });
+
+  if (saleCents && saleCents !== regularCents) {
+    prices.push({
+      product: mockProduct.id,
+      currency: 'usd',
+      unit_amount: saleCents,
+      nickname: 'Sale price',
+      active: true,
+      metadata: { type: 'sale' }
+    });
+  }
+
+  return prices;
+}
+
+/**
+ * Helper to create all products and prices in Stripe.
+ * Call this function with your Stripe instance.
+ */
+export async function createStripeProductsAndPrices(stripe: Stripe) {
+  const productParamsList = MOCK_PRODUCTS.map(mockToStripeProduct);
+  const priceParamsList = MOCK_PRODUCTS.flatMap(mockToStripePrices);
+
+  console.log(`Creating ${productParamsList.length} products...`);
+  for (const params of productParamsList) {
+    try {
+      const product = await stripe.products.create(params);
+      console.log(`✅ Created product: ${product.name} (${product.id})`);
+    } catch (err: any) {
+      if (err.type === 'StripeInvalidRequestError' && err.code === 'resource_already_exists') {
+        console.log(`⚠️ Product ${params.id} already exists – skipping`);
+      } else {
+        console.error(`❌ Failed to create product ${params.id}:`, err.message);
+      }
+    }
+  }
+
+  console.log(`\nCreating ${priceParamsList.length} prices...`);
+  for (const params of priceParamsList) {
+    try {
+      const price = await stripe.prices.create(params);
+      console.log(`✅ Created price ${price.id} for product ${params.product}`);
+    } catch (err: any) {
+      console.error(`❌ Failed to create price:`, err.message);
+    }
+  }
+}
