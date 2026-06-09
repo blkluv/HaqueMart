@@ -7,10 +7,10 @@ const CATEGORIES = [
   { name: "Women", slug: "women", emoji: "🌸" },
   { name: "Men", slug: "men", emoji: "👟" },
   { name: "Rentals", slug: "rentals", emoji: "🏠" },
-  { name: "Promotions", slug: "promotions", emoji: "🏪" },
+  { name: "Promo", slug: "promo", emoji: "🏪" },     
   { name: "Driver", slug: "driver", emoji: "🚗" },
   { name: "Delivery", slug: "delivery", emoji: "🚚" },
-  { name: "Food", slug: "food", emoji: "🍔" },
+  { name: "Food", slug: "food", emoji: "🍔" },      
 ];
 
 interface Props {
