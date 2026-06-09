@@ -176,7 +176,7 @@ export function mockToStripeProduct(mockProduct: ProductListItem): Stripe.Produc
       soldThisWeek: String(mockProduct.soldThisWeek ?? 0),
       categories: mockProduct.productCategories.nodes.map(c => c.name).join(',')
     },
-    images: [mockProduct.image.sourceUrl],   // unique per product (replace with your own URLs)
+    images: [mockProduct.image?.sourceUrl || "/placeholder.jpg"],   // unique per product (replace with your own URLs)
     tax_code: 'txcd_10000000',
     active: true,
     shippable: true,
