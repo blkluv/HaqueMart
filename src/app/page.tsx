@@ -3,15 +3,17 @@ import { ProductGrid } from "@/components/ProductGrid";
 import { NewsletterSection } from "@/components/NewsletterSection";
 import type { ProductListItem } from "@/types";
 
-const CATEGORIES = [
-  { name: "Women", slug: "women", emoji: "🌸" },
-  { name: "Men", slug: "men", emoji: "👟" },
-  { name: "Rentals", slug: "rentals", emoji: "🏠" },
-  { name: "Promo", slug: "promo", emoji: "🏪" },     
-  { name: "Driver", slug: "driver", emoji: "🚗" },
-  { name: "Delivery", slug: "delivery", emoji: "🚚" },
-  { name: "Food", slug: "food", emoji: "🍔" },      
-];
+// Emoji mapping for known categories (you can extend this)
+const categoryEmoji: Record<string, string> = {
+  women: "🌸",
+  men: "👟",
+  rentals: "🏠",
+  promo: "🏪",
+  driver: "🚗",
+  delivery: "🚚",
+  food: "🍔",
+  // add more as needed
+};
 
 interface Props {
   searchParams: Promise<{ category?: string }>;
@@ -22,6 +24,7 @@ export default async function HomePage({ searchParams }: Props) {
   const categorySlug = params?.category;
 
   let products: ProductListItem[] = [];
+  let categories: Array<{ name: string; slug: string }> = [];
 
   const wpApiUrl = process.env.NEXT_PUBLIC_WP_API_URL;
   const consumerKey = process.env.WC_CONSUMER_KEY;
@@ -33,25 +36,18 @@ export default async function HomePage({ searchParams }: Props) {
     console.error("❌ Missing WC_CONSUMER_KEY or WC_CONSUMER_SECRET environment variables");
   } else {
     try {
-      // Build Basic Auth header
-      const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
-      const url = `${wpApiUrl}/wp-json/wc/v3/products?per_page=100`;
+      const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64");
 
-      console.log("Fetching products from:", url); // Optional debug
-
-      const res = await fetch(url, {
-        headers: {
-          'Authorization': `Basic ${auth}`,
-        },
+      // 1. Fetch products
+      const productsUrl = `${wpApiUrl}/wp-json/wc/v3/products?per_page=100`;
+      const productsRes = await fetch(productsUrl, {
+        headers: { Authorization: `Basic ${auth}` },
         next: { revalidate: 60 },
       });
+      if (!productsRes.ok) throw new Error(`WooCommerce API returned ${productsRes.status}`);
+      const wooProducts = await productsRes.json();
 
-      if (!res.ok) {
-        throw new Error(`WooCommerce API returned ${res.status}: ${res.statusText}`);
-      }
-
-      const wooProducts = await res.json();
-
+      // Transform products
       products = wooProducts.map((p: any) => ({
         id: String(p.id),
         databaseId: p.id,
@@ -77,11 +73,29 @@ export default async function HomePage({ searchParams }: Props) {
         stockCount: p.stock_quantity || 0,
         badge: "",
       }));
+
+      // 2. Fetch product categories (for dynamic filters)
+      const categoriesUrl = `${wpApiUrl}/wp-json/wc/v3/products/categories?per_page=100`;
+      const categoriesRes = await fetch(categoriesUrl, {
+        headers: { Authorization: `Basic ${auth}` },
+        next: { revalidate: 60 },
+      });
+      if (!categoriesRes.ok) throw new Error(`Categories API returned ${categoriesRes.status}`);
+      const wooCategories = await categoriesRes.json();
+
+      // Filter out "Uncategorized" if needed, and keep only categories that actually have products
+      categories = wooCategories
+        .filter((cat: any) => cat.count > 0 && cat.slug !== "uncategorized")
+        .map((cat: any) => ({
+          name: cat.name,
+          slug: cat.slug,
+        }));
     } catch (error) {
-      console.error("Failed to fetch WooCommerce products:", error);
+      console.error("Failed to fetch data from WooCommerce:", error);
     }
   }
 
+  // Filter products by selected category (if any)
   const filteredProducts = categorySlug
     ? products.filter((p) =>
         p.productCategories.nodes.some((c) => c.slug === categorySlug)
@@ -102,6 +116,7 @@ export default async function HomePage({ searchParams }: Props) {
       </section>
 
       <div className="flex flex-wrap gap-2 justify-center">
+        {/* "All" link */}
         <a
           href="/"
           className={`rounded-full border px-4 py-1.5 text-sm transition ${
@@ -112,8 +127,11 @@ export default async function HomePage({ searchParams }: Props) {
         >
           All
         </a>
-        {CATEGORIES.map((cat) => {
+
+        {/* Dynamically generated category buttons */}
+        {categories.map((cat) => {
           const isActive = activeCategory === cat.slug;
+          const emoji = categoryEmoji[cat.slug] ?? "📦"; // fallback emoji
           return (
             <a
               key={cat.slug}
@@ -124,7 +142,7 @@ export default async function HomePage({ searchParams }: Props) {
                   : "hover:bg-muted"
               }`}
             >
-              <span>{cat.emoji}</span>
+              <span>{emoji}</span>
               <span>{cat.name}</span>
             </a>
           );

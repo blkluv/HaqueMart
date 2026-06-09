@@ -20,9 +20,9 @@ export function parsePrice(priceStr: string | null | undefined): number {
   return parseFloat(cleaned) || 0;
 }
 
-/** Format a numeric price for display (uses browser locale). */
-export function formatPrice(amount: number, currency = "GBP"): string {
-  return new Intl.NumberFormat("en-GB", {
+/** Format a numeric price for display (US Dollars). */
+export function formatPrice(amount: number, currency = "USD"): string {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
