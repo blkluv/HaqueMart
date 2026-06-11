@@ -1,11 +1,11 @@
 import type { ProductListItem, Product, MockReview } from "@/types";
 import Stripe from "stripe";
 
-// ── Placeholder images (replace these with your own custom image URLs) ─────────
+// ── Placeholder images ──────────────────────────────────────────────────────
 const placeholder = (seed: string) =>
   `https://picsum.photos/seed/${seed}/800/600`;
 
-// ── Shared review pool (unchanged) ────────────────────────────────────────────
+// ── Shared review pool ──────────────────────────────────────────────────────
 const REVIEWS: Record<string, MockReview[]> = {
   "mock-1": [
     { id: "r1a", author: "Sarah M.", rating: 5, date: "12 May 2026", verified: true, body: "Perfect everyday bag! The canvas quality is excellent and it holds so much more than you'd expect. Three months in and it still looks brand new — absolutely worth every penny." },
@@ -49,7 +49,7 @@ const REVIEWS: Record<string, MockReview[]> = {
   ],
 };
 
-// ── Product listings (keep your original MOCK_PRODUCTS) ────────────────────────
+// ── Product listings ────────────────────────────────────────────────────────
 export const MOCK_PRODUCTS: ProductListItem[] = [
   {
     id: "mock-1", databaseId: 1,
@@ -125,7 +125,7 @@ export const MOCK_PRODUCTS: ProductListItem[] = [
   },
 ];
 
-// ── Mapped product details (kept as is) ────────────────────────────────────────
+// ── Mapped product details ──────────────────────────────────────────────────
 export const MOCK_PRODUCT_MAP: Record<string, Product> = Object.fromEntries(
   MOCK_PRODUCTS.map((p) => [
     p.slug,
@@ -145,11 +145,8 @@ export const MOCK_CATEGORIES = [
   "Driver", "Delivery", "Shoes", "Clothing", "Rentals", "Services", "Boost My Biz",
 ];
 
-// ────────────── NEW: Stripe helper functions (added below) ─────────────────────
+// ────────────── Stripe helper functions ─────────────────────────────────────
 
-/**
- * Converts a price string like "$24.99" into an amount in cents.
- */
 function parsePriceToCents(priceString: string | null | undefined): number | null {
   if (!priceString) return null;
   const match = priceString.match(/\d+(?:\.\d{1,2})?/);
@@ -158,13 +155,9 @@ function parsePriceToCents(priceString: string | null | undefined): number | nul
   return Math.round(dollars * 100);
 }
 
-/**
- * Generates Stripe product parameters from your mock product.
- * Uses the existing `image.sourceUrl` (which you can later replace with a custom image).
- */
 export function mockToStripeProduct(mockProduct: ProductListItem): Stripe.ProductCreateParams {
   return {
-    id: mockProduct.id,                     // custom product ID (e.g., "mock-1")
+    id: mockProduct.id,
     name: mockProduct.name,
     description: `A beautifully crafted ${mockProduct.name.toLowerCase()}. Made with quality materials and designed to last.`,
     metadata: {
@@ -176,7 +169,7 @@ export function mockToStripeProduct(mockProduct: ProductListItem): Stripe.Produc
       soldThisWeek: String(mockProduct.soldThisWeek ?? 0),
       categories: mockProduct.productCategories.nodes.map(c => c.name).join(',')
     },
-    images: [mockProduct.image?.sourceUrl || "/placeholder.jpg"],   // unique per product (replace with your own URLs)
+    images: [mockProduct.image?.sourceUrl || "/placeholder.jpg"],
     tax_code: 'txcd_10000000',
     active: true,
     shippable: true,
@@ -184,9 +177,6 @@ export function mockToStripeProduct(mockProduct: ProductListItem): Stripe.Produc
   };
 }
 
-/**
- * Generates one or two Stripe price parameters for a product.
- */
 export function mockToStripePrices(mockProduct: ProductListItem): Stripe.PriceCreateParams[] {
   const regularCents = parsePriceToCents(mockProduct.regularPrice);
   const saleCents = parsePriceToCents(mockProduct.salePrice);
@@ -218,10 +208,6 @@ export function mockToStripePrices(mockProduct: ProductListItem): Stripe.PriceCr
   return prices;
 }
 
-/**
- * Helper to create all products and prices in Stripe.
- * Call this function with your Stripe instance.
- */
 export async function createStripeProductsAndPrices(stripe: Stripe) {
   const productParamsList = MOCK_PRODUCTS.map(mockToStripeProduct);
   const priceParamsList = MOCK_PRODUCTS.flatMap(mockToStripePrices);
