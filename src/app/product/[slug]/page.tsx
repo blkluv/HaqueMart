@@ -18,45 +18,40 @@ export default async function ProductPage({ params }: Props) {
 
   const numericPrice = parseFloat(product.price ?? "0") || 0;
 
-  // Use type assertion 'as any' for fields that might not exist on the Product type
-const cartItem = {
-  productId: product.databaseId,
-  databaseId: product.databaseId,
-  name: product.name,
-  slug: product.slug,
-  price: numericPrice,
-  priceFormatted: formatPrice(numericPrice),
+  // Build cart item with correct types
+  const cartItem = {
+    productId: product.databaseId,
+    databaseId: product.databaseId,
+    name: product.name,
+    slug: product.slug,
+    price: numericPrice,
+    priceFormatted: formatPrice(numericPrice),
 
-  regularPrice: product.regularPrice
-    ? parseFloat(product.regularPrice.replace(/[^0-9.]/g, ""))
-    : numericPrice,
+    // Keep as strings (or null) – no parsing
+    regularPrice: (product as any).regularPrice ?? null,
+    salePrice: (product as any).salePrice ?? null,
 
-  salePrice: product.salePrice
-    ? parseFloat(product.salePrice.replace(/[^0-9.]/g, ""))
-    : null,
+    stockStatus: (product as any).stockStatus || "IN_STOCK",
+    stockCount: (product as any).stockQuantity ?? 0,
 
-  stockStatus: product.stockStatus || "IN_STOCK",
+    image: {
+      sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
+      altText: product.image?.altText || product.name,
+    },
 
-  stockCount: product.stockQuantity ?? 0,
+    productCategories: {
+      nodes:
+        product.productCategories?.nodes.map((cat) => ({
+          name: cat.name,
+          slug: cat.slug,
+        })) ?? [],
+    },
 
-  image: {
-    sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
-    altText: product.image?.altText || product.name,
-  },
-
-  productCategories: {
-    nodes:
-      product.productCategories?.nodes.map((cat) => ({
-        name: cat.name,
-        slug: cat.slug,
-      })) ?? [],
-  },
-
-  rating: product.rating ?? 0,
-  reviewCount: product.reviewCount ?? 0,
-  soldThisWeek: product.soldThisWeek ?? 0,
-  badge: product.badge,
-};
+    rating: (product as any).averageRating ?? 0,
+    reviewCount: (product as any).reviewCount ?? 0,
+    soldThisWeek: (product as any).soldThisWeek ?? 0,
+    badge: (product as any).badge ?? undefined, // or undefined to match string | undefined
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
