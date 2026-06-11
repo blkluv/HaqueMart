@@ -21,10 +21,10 @@ export function parsePrice(priceStr: string | null | undefined): number {
 }
 
 /** Format a numeric price for display (US Dollars). */
-export function formatPrice(amount: number, currency = "USD"): string {
+export function formatPrice(price: string | number | null): string {
+  const num = parseFloat(String(price ?? 0));
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
+    currency: "USD",
+  }).format(num);
 }

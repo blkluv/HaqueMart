@@ -1,20 +1,27 @@
+// src/lib/graphql/queries.ts
+
 export const GET_PRODUCTS = /* GraphQL */ `
   query GetProducts($first: Int, $after: String, $category: String) {
-    products(
-      first: $first
-      after: $after
-      where: { status: PUBLISH, category: $category }
-    ) {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
+    products(first: $first, after: $after, where: { category: $category }) {
       nodes {
         id
         databaseId
         name
         slug
-        stockStatus
+        ... on SimpleProduct {
+          price
+          regularPrice
+          salePrice
+          stockStatus
+          stockQuantity
+        }
+        ... on VariableProduct {
+          price
+          regularPrice
+          salePrice
+          stockStatus
+          stockQuantity
+        }
         image {
           sourceUrl
           altText
@@ -25,23 +32,19 @@ export const GET_PRODUCTS = /* GraphQL */ `
             slug
           }
         }
-        ... on SimpleProduct {
-          price
-          regularPrice
-          salePrice
-        }
-        ... on VariableProduct {
-          price
-          regularPrice
-          salePrice
-        }
+        averageRating
+        reviewCount
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
   }
 `;
 
 export const GET_PRODUCT = /* GraphQL */ `
-  query GetProduct($slug: String!) {
+  query GetProduct($slug: ID!) {
     product(id: $slug, idType: SLUG) {
       id
       databaseId
@@ -49,7 +52,29 @@ export const GET_PRODUCT = /* GraphQL */ `
       slug
       description
       shortDescription
-      stockStatus
+      ... on SimpleProduct {
+        price
+        regularPrice
+        salePrice
+        stockStatus
+        stockQuantity
+      }
+      ... on VariableProduct {
+        price
+        regularPrice
+        salePrice
+        stockStatus
+        stockQuantity
+        variations {
+          nodes {
+            id
+            databaseId
+            name
+            stockStatus
+            stockQuantity
+          }
+        }
+      }
       image {
         sourceUrl
         altText
@@ -66,18 +91,8 @@ export const GET_PRODUCT = /* GraphQL */ `
           slug
         }
       }
-      ... on SimpleProduct {
-        price
-        regularPrice
-        salePrice
-        stockQuantity
-      }
-      ... on VariableProduct {
-        price
-        regularPrice
-        salePrice
-        stockQuantity
-      }
+      averageRating
+      reviewCount
     }
   }
 `;

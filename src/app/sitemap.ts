@@ -3,7 +3,7 @@ import { isWpConfigured } from "@/lib/graphql/client";
 import { getProducts } from "@/lib/graphql/products";
 import { MOCK_PRODUCTS } from "@/lib/mock-data";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://campcreekmarket.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.campcreekmarket.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let slugs: string[] = [];
@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const productEntries: MetadataRoute.Sitemap = slugs.map((slug) => ({
-    url: `${BASE_URL}/products/${slug}`,
+    url: `${BASE_URL}/product/${slug}`,
     lastModified: new Date(),
     changeFrequency: "daily",
     priority: 0.8,

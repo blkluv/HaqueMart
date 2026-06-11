@@ -74,22 +74,16 @@ export default async function HomePage({ searchParams }: Props) {
         badge: "",
       }));
 
-      // 2. Fetch product categories (for dynamic filters)
-      const categoriesUrl = `${wpApiUrl}/wp-json/wc/v3/products/categories?per_page=100`;
-      const categoriesRes = await fetch(categoriesUrl, {
-        headers: { Authorization: `Basic ${auth}` },
-        next: { revalidate: 60 },
+      // 2. Build category list from the products we already have
+      const categoryMap = new Map<string, { name: string; slug: string }>();
+      products.forEach((p) => {
+        p.productCategories.nodes.forEach((cat) => {
+          if (cat.slug !== "uncategorized") {
+            categoryMap.set(cat.slug, { name: cat.name, slug: cat.slug });
+          }
+        });
       });
-      if (!categoriesRes.ok) throw new Error(`Categories API returned ${categoriesRes.status}`);
-      const wooCategories = await categoriesRes.json();
-
-      // Filter out "Uncategorized" if needed, and keep only categories that actually have products
-      categories = wooCategories
-        .filter((cat: any) => cat.count > 0 && cat.slug !== "uncategorized")
-        .map((cat: any) => ({
-          name: cat.name,
-          slug: cat.slug,
-        }));
+      categories = Array.from(categoryMap.values());
     } catch (error) {
       console.error("Failed to fetch data from WooCommerce:", error);
     }

@@ -8,10 +8,7 @@ import { ChevronLeft, Loader2, Package } from "lucide-react";
 import { useCart } from "@/lib/cart/context";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
-
-function generateOrderId() {
-  return "HM-" + Math.random().toString(36).slice(2, 10).toUpperCase();
-}
+import { placeOrder } from "@/lib/actions";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors";
@@ -24,14 +21,15 @@ export default function CheckoutPage() {
 
   const [mounted, setMounted] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     email: "",
     firstName: "",
     lastName: "",
     address1: "",
     address2: "",
-    city: "Atlanta",      // forced to Atlanta
-    state: "GA",          // Georgia
+    city: "Atlanta",
+    state: "GA",
     postcode: "",
     country: "United States",
   });
@@ -50,16 +48,12 @@ export default function CheckoutPage() {
   function setField<K extends keyof typeof form>(field: K) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       let value = e.target.value;
-      // If city field, force to "Atlanta" (case‑insensitive, trim spaces)
-      if (field === 'city') {
+      if (field === "city") {
         const trimmed = value.trim();
-        if (trimmed.toLowerCase() !== 'atlanta') {
-          // Optionally show an error – but we'll just reject non-Atlanta
-          // For better UX, we could show a toast, but simplest: reset to Atlanta
-          value = 'Atlanta';
+        if (trimmed.toLowerCase() !== "atlanta") {
+          value = "Atlanta";
         } else {
-          // Normalize capitalization
-          value = 'Atlanta';
+          value = "Atlanta";
         }
       }
       setForm((f) => ({ ...f, [field]: value }));
@@ -68,16 +62,48 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+
     // Extra validation: ensure city is exactly Atlanta
-    if (form.city.toLowerCase() !== 'atlanta') {
-      alert('Sorry, shipping is only available within Atlanta, GA.');
+    if (form.city.toLowerCase() !== "atlanta") {
+      setError("Sorry, shipping is only available within Atlanta, GA.");
       return;
     }
+
+    if (cart.items.length === 0) {
+      setError("Your cart is empty.");
+      return;
+    }
+
     setPlacing(true);
-    await new Promise((res) => setTimeout(res, 1600));
-    const orderId = generateOrderId();
-    clearCart();
-    router.push(`/checkout/success?order=${orderId}`);
+
+    // Map cart items to the format expected by placeOrder
+    const orderItems = cart.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+
+    const shipping = {
+      firstName: form.firstName,
+      lastName: form.lastName,
+      address1: form.address1,
+      address2: form.address2,
+      city: form.city,
+      state: form.state,
+      postcode: form.postcode,
+      country: form.country,
+      email: form.email,
+    };
+
+    const result = await placeOrder(orderItems, shipping);
+
+    if (result.success) {
+      clearCart();
+      router.push(`/checkout/success?order=${result.orderId}`);
+    } else {
+      setPlacing(false);
+      setError(result.error || "Something went wrong. Please try again.");
+    }
   }
 
   // Don't render before hydration — avoids SSR/client cart mismatch
@@ -107,6 +133,13 @@ export default function CheckoutPage() {
             📦 We currently ship <strong>only within Atlanta, GA</strong>. Thank you for supporting local!
           </div>
 
+          {/* Error banner */}
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {error}
+            </div>
+          )}
+
           {/* Contact */}
           <section>
             <h2 className="mb-4 text-base font-semibold">Contact</h2>
@@ -126,7 +159,9 @@ export default function CheckoutPage() {
 
           {/* Shipping address — Atlanta only */}
           <section>
-            <h2 className="mb-4 text-base font-semibold">Shipping address (Atlanta only)</h2>
+            <h2 className="mb-4 text-base font-semibold">
+              Shipping address (Atlanta only)
+            </h2>
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -198,7 +233,9 @@ export default function CheckoutPage() {
                     disabled
                     placeholder="Atlanta (only)"
                   />
-                  <p className="mt-1 text-xs text-muted-foreground">Only Atlanta is eligible for delivery.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Only Atlanta is eligible for delivery.
+                  </p>
                 </div>
                 <div>
                   <label className={labelClass}>State</label>
@@ -240,13 +277,16 @@ export default function CheckoutPage() {
           </section>
         </div>
 
-        {/* Right — Order summary (unchanged) */}
+        {/* Right — Order summary */}
         <aside className="flex h-fit flex-col gap-4 rounded-xl border border-border bg-card p-6 lg:sticky lg:top-24">
           <h2 className="font-semibold">Order summary</h2>
 
           <ul className="flex flex-col divide-y divide-border">
             {cart.items.map((item) => (
-              <li key={item.productId} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+              <li
+                key={item.productId}
+                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+              >
                 <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
                   {item.image ? (
                     <Image
@@ -284,7 +324,9 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span className="text-muted-foreground">Calculated at dispatch (Atlanta only)</span>
+              <span className="text-muted-foreground">
+                Calculated at dispatch (Atlanta only)
+              </span>
             </div>
           </div>
 
@@ -304,7 +346,7 @@ export default function CheckoutPage() {
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Demo storefront — no real payment will be processed. Shipping only within Atlanta, GA.
+            Orders are processed securely via Stripe. Delivery only within Camp Creek, Atlanta, GA.
           </p>
         </aside>
       </form>

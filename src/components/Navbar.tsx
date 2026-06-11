@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // ← import useEffect
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ShoppingCart, Search, X } from "lucide-react";
@@ -13,12 +13,21 @@ export function Navbar() {
   const [q, setQ] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Track client-side mount to avoid hydration mismatch
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     const query = q.trim();
     router.push(query ? `/?q=${encodeURIComponent(query)}` : "/");
     setSearchOpen(false);
   }
+
+  // Build the cart button label – only show count after mount
+  const cartLabel = mounted
+    ? `Open cart — ${cart.itemCount} item${cart.itemCount !== 1 ? "s" : ""}`
+    : "Open cart";
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -71,12 +80,13 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={`Open cart — ${cart.itemCount} item${cart.itemCount !== 1 ? "s" : ""}`}
+            aria-label={cartLabel}  // safe from hydration mismatch
             onClick={openCart}
             className="relative"
           >
             <ShoppingCart className="size-5" />
-            {cart.itemCount > 0 && (
+            {/* Only render the count badge after mount */}
+            {mounted && cart.itemCount > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                 {cart.itemCount > 9 ? "9+" : cart.itemCount}
               </span>

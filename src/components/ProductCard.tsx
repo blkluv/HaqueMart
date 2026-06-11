@@ -59,7 +59,7 @@ export function ProductCard({ product }: Props) {
     <div className="group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10">
 
       {/* ── Image ── */}
-      <Link href={`/products/${product.slug}`} className="relative aspect-[4/3] overflow-hidden bg-muted block">
+      <Link href={`/product/${product.slug}`} className="relative aspect-[4/3] overflow-hidden bg-muted block">
         {product.image ? (
           <Image
             src={product.image.sourceUrl}
@@ -124,7 +124,7 @@ export function ProductCard({ product }: Props) {
 
         {/* Name */}
         <Link
-          href={`/products/${product.slug}`}
+          href={`/product/${product.slug}`}
           className="font-semibold leading-snug transition-colors hover:text-primary line-clamp-2"
         >
           {product.name}

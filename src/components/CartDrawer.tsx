@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { X, ShoppingBag } from "lucide-react";
@@ -12,6 +13,8 @@ const FREE_SHIPPING_THRESHOLD = 50;
 
 export function CartDrawer() {
   const { cart, isOpen, closeCart, removeItem, updateQuantity } = useCart();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - cart.total);
   const shippingProgress = Math.min(100, (cart.total / FREE_SHIPPING_THRESHOLD) * 100);
@@ -40,7 +43,7 @@ export function CartDrawer() {
         <div className="flex items-center justify-between border-b border-border px-4 py-4">
           <h2 className="font-semibold">
             Your Cart
-            {cart.itemCount > 0 && (
+            {mounted && cart.itemCount > 0 && (
               <span className="ml-2 text-sm font-normal text-muted-foreground">
                 ({cart.itemCount} item{cart.itemCount !== 1 ? "s" : ""})
               </span>
@@ -51,8 +54,8 @@ export function CartDrawer() {
           </Button>
         </div>
 
-        {/* Free shipping progress bar */}
-        {cart.items.length > 0 && (
+        {/* Free shipping progress bar — wrapped with mounted to avoid hydration mismatch */}
+        {mounted && cart.items.length > 0 && (
           <div className="border-b border-border bg-muted/30 px-4 py-3">
             {remaining > 0 ? (
               <p className="mb-2 text-center text-xs text-muted-foreground">
@@ -76,7 +79,7 @@ export function CartDrawer() {
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          {cart.items.length === 0 ? (
+          {!mounted || cart.items.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16 text-center text-muted-foreground">
               <ShoppingBag className="size-12 opacity-20" />
               <p className="font-medium">Your cart is empty</p>
@@ -106,7 +109,7 @@ export function CartDrawer() {
                   </div>
                   <div className="flex flex-1 flex-col gap-1 min-w-0">
                     <Link
-                      href={`/products/${item.slug}`}
+                      href={`/product/${item.slug}`}
                       className="truncate text-sm font-medium hover:text-primary"
                       onClick={closeCart}
                     >
@@ -137,8 +140,8 @@ export function CartDrawer() {
           )}
         </div>
 
-        {/* Footer */}
-        {cart.items.length > 0 && (
+        {/* Footer — also wrapped to prevent future mismatches */}
+        {mounted && cart.items.length > 0 && (
           <div className="border-t border-border px-4 py-4 flex flex-col gap-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
