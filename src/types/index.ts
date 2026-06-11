@@ -52,14 +52,48 @@ export interface Product extends ProductListItem {
   viewingSeed?: number;
 }
 
-// ── Cart types (added) ───────────────────────────────────────────────────────
+// ── Mock review (if you have one) — keep or remove as needed ──────────────────
+export interface MockReview {
+  id: number;
+  author: string;
+  rating: number;
+  content: string;
+  date: string;
+}
 
-export interface CartItem extends Omit<ProductListItem, 'price'> {
-  quantity: number;
+// ── Cart types ────────────────────────────────────────────────────────────────
+
+export interface CartItem {
+  /** Unique product identifier used by the cart */
+  productId: number;
+
+  /** WooCommerce database ID (often the same as productId) */
+  databaseId: number;
+
+  name: string;
+  slug: string;
+
+  /** Numeric price for calculations */
+  price: number;
   /** Already formatted price string, e.g. "$29.99" */
   priceFormatted: string;
-  /** Numeric price used for calculations */
-  price: number;
+
+  regularPrice: string | null;
+  salePrice: string | null;
+
+  stockStatus: StockStatus;
+  stockCount?: number;
+
+  image: WPImage | null;
+  productCategories: { nodes: ProductCategory[] };
+
+  rating?: number;
+  reviewCount?: number;
+  soldThisWeek?: number;
+  badge?: string;
+
+  /** Cart‑specific quantity */
+  quantity: number;
 }
 
 export interface Cart {
