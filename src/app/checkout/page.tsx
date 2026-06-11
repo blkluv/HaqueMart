@@ -121,7 +121,7 @@ async function handleSubmit(e: React.FormEvent) {
     clearCart();
 
     // Redirect to the WooCommerce payment page (Stripe)
-    const wpBaseUrl = process.env.NEXT_PUBLIC_WP_URL || "https://yourstore.com";
+    const wpBaseUrl = process.env.NEXT_PUBLIC_WP_URL || "https://api.campcreekmarket.com";
     const payUrl = `${wpBaseUrl}/checkout/order-pay/${result.orderId}/?pay_for_order=true&key=${result.orderKey}`;
 
     router.push(payUrl);
