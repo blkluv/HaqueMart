@@ -1,5 +1,5 @@
 "use client";
-import type { Cart } from "@/types";
+import type { CartItem } from "@/types";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
