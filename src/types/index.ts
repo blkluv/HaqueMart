@@ -101,3 +101,19 @@ export interface Cart {
   total: number;
   itemCount: number;
 }
+
+// ── GraphQL Response Wrappers ────────────────────────────────────────────────
+
+export interface ProductsResponse {
+  products: {
+    nodes: ProductListItem[];
+    pageInfo: {
+      hasNextPage: boolean;
+      endCursor: string | null;
+    };
+  };
+}
+
+export interface ProductResponse {
+  product: Product;
+}
