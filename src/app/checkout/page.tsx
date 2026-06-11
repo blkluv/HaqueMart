@@ -9,6 +9,7 @@ import { useCart } from "@/lib/cart/context";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 import { placeOrder } from "@/lib/actions";
+import type { CartItem } from "@/types"; // ✅ added
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors";
@@ -35,12 +36,11 @@ export default function CheckoutPage() {
     state: "GA",
     postcode: "",
     country: "United States",
-    rwatok: "",   // 3‑word address from rwatok.land
+    rwatok: "",
   });
 
   useEffect(() => setMounted(true), []);
 
-  // Redirect to shop if cart is empty (and not mid-submit)
   useEffect(() => {
     if (mounted && cart.items.length === 0 && !placing) {
       router.replace("/");
@@ -50,14 +50,7 @@ export default function CheckoutPage() {
   function setField<K extends keyof typeof form>(field: K) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       let value = e.target.value;
-      if (field === "city") {
-        const trimmed = value.trim();
-        if (trimmed.toLowerCase() !== "atlanta") {
-          value = "Atlanta";
-        } else {
-          value = "Atlanta";
-        }
-      }
+      if (field === "city") value = "Atlanta";
       setForm((f) => ({ ...f, [field]: value }));
     };
   }
@@ -76,13 +69,11 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Validate 3‑word address if that option is selected
     if (addressType === "rwatok" && !form.rwatok.trim()) {
       setError("Please enter your 3‑word address from rwatok.land.");
       return;
     }
 
-    // Validate traditional address fields if that option is selected
     if (addressType === "traditional") {
       if (!form.address1.trim() || !form.postcode.trim()) {
         setError("Please complete your shipping address.");
@@ -92,8 +83,8 @@ export default function CheckoutPage() {
 
     setPlacing(true);
 
-    // ✅ FIX: assign the result of .map() to a variable
-    const orderItems = cart.items.map((item) => ({
+    // ✅ Explicit type annotation added
+    const orderItems = cart.items.map((item: CartItem) => ({
       productId: item.productId,
       quantity: item.quantity,
     }));
@@ -118,8 +109,6 @@ export default function CheckoutPage() {
 
     if (result.success) {
       clearCart();
-
-      // Redirect to the WooCommerce payment page (Stripe)
       const wpBaseUrl = process.env.NEXT_PUBLIC_WP_URL || "https://yourstore.com";
       const payUrl = `${wpBaseUrl}/checkout/order-pay/${result.orderId}/?pay_for_order=true&key=${result.orderKey}`;
       router.push(payUrl);
@@ -148,21 +137,18 @@ export default function CheckoutPage() {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]"
       >
-        {/* Left — Shipping form (Atlanta‑only) */}
+        {/* Left — Shipping form */}
         <div className="flex flex-col gap-8">
-          {/* Atlanta shipping notice */}
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             📦 We currently ship <strong>only within Atlanta, GA</strong>. Thank you for supporting local!
           </div>
 
-          {/* Error banner */}
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {error}
             </div>
           )}
 
-          {/* Contact */}
           <section>
             <h2 className="mb-4 text-base font-semibold">Contact</h2>
             <div>
@@ -179,13 +165,12 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          {/* Shipping address — Atlanta only */}
           <section>
             <h2 className="mb-4 text-base font-semibold">
               Shipping address (Atlanta only)
             </h2>
 
-            {/* Address type selector */}
+            {/* Address type toggle */}
             <div className="mb-6 flex gap-4">
               <button
                 type="button"
@@ -213,7 +198,6 @@ export default function CheckoutPage() {
               </button>
             </div>
 
-            {/* rwatok.land info & link */}
             {addressType === "rwatok" && (
               <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
                 <p className="font-medium">What is a 3‑word address?</p>
@@ -262,7 +246,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Traditional address fields */}
               {addressType === "traditional" && (
                 <>
                   <div>
@@ -297,7 +280,6 @@ export default function CheckoutPage() {
                 </>
               )}
 
-              {/* 3 Word Address field */}
               {addressType === "rwatok" && (
                 <div>
                   <label className={labelClass}>
