@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getProduct } from "@/lib/graphql/products";
 import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
-import { ProductActions } from "@/components/ProductActions";   // 👈 import
+import { ProductActions } from "@/components/ProductActions";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -16,16 +16,40 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProduct(slug);
   if (!product) notFound();
 
-  // Build the CartItem‑compatible object (without quantity)
+  // Build a complete CartItem‑compatible object (without quantity)
+  const numericPrice = parseFloat(product.price ?? "0") || 0;
+
   const cartItem = {
-    productId: product.databaseId,       // use databaseId (number)
+    productId: product.databaseId,
+    databaseId: product.databaseId,
     name: product.name,
     slug: product.slug,
-    price: parseFloat(product.price) || 0,   // convert string → number
+    price: numericPrice,
+    priceFormatted: formatPrice(numericPrice),          // ← required by CartItem type
+    regularPrice: product.regularPrice
+      ? parseFloat(product.regularPrice)
+      : numericPrice,
+    salePrice: product.salePrice
+      ? parseFloat(product.salePrice)
+      : null,
+    stockStatus: product.stockStatus || "IN_STOCK",
+    stockCount: product.stockQuantity ?? 0,
     image: {
       sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
       altText: product.image?.altText || product.name,
     },
+    productCategories: {
+      nodes: product.productCategories?.nodes.map(
+        (cat: { name: string; slug: string }) => ({
+          name: cat.name,
+          slug: cat.slug,
+        })
+      ) ?? [],
+    },
+    rating: product.averageRating ?? 0,
+    reviewCount: product.reviewCount ?? 0,
+    soldThisWeek: 0,
+    badge: "",
   };
 
   return (
@@ -50,14 +74,12 @@ export default async function ProductPage({ params }: Props) {
         <div className="flex flex-col gap-4">
           <h1 className="text-3xl font-bold">{product.name}</h1>
           <p className="text-2xl font-semibold text-primary">
-            {formatPrice(parseFloat(product.price) || 0)}
+            {formatPrice(numericPrice)}
           </p>
           <div
             className="prose text-muted-foreground"
             dangerouslySetInnerHTML={{ __html: product.description || "" }}
           />
-
-          {/* Replace the static button with ProductActions */}
           <ProductActions item={cartItem} />
         </div>
       </div>
