@@ -82,7 +82,6 @@ export default function CheckoutPage() {
 
     setPlacing(true);
 
-    // No more any casts – cart.items is already typed as CartItem[]
     const orderItems = cart.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
@@ -108,9 +107,21 @@ export default function CheckoutPage() {
 
     if (result.success) {
       clearCart();
-      const wpBaseUrl = process.env.NEXT_PUBLIC_WP_URL || "https://api.campcreekmarket.com";
-      const payUrl = `${wpBaseUrl}/checkout/order-pay/${result.orderId}/?pay_for_order=true&key=${result.orderKey}`;
-      router.push(payUrl);
+
+      // ✅ FIX: Fetch the WooCommerce‑generated payment URL from our backend endpoint
+      try {
+        const paymentRes = await fetch(`/api/order-payment-url/${result.orderId}`);
+        const paymentData = await paymentRes.json();
+
+        if (paymentData.success && paymentData.paymentUrl) {
+          router.push(paymentData.paymentUrl);
+        } else {
+          throw new Error(paymentData.error || "Invalid payment URL response");
+        }
+      } catch (err) {
+        setError("Could not retrieve payment page. Please contact support.");
+        setPlacing(false);
+      }
     } else {
       setPlacing(false);
       setError(result.error || "Something went wrong. Please try again.");
@@ -368,7 +379,6 @@ export default function CheckoutPage() {
           <h2 className="font-semibold">Order summary</h2>
 
           <ul className="flex flex-col divide-y divide-border">
-            {/* Now fully typed – no any needed */}
             {cart.items.map((item) => (
               <li
                 key={item.productId}
