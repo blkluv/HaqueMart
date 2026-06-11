@@ -1,5 +1,5 @@
 "use client";
-
+import type { CartItem } from "@/types";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -66,10 +66,10 @@ export default function CheckoutPage() {
 
     setPlacing(true);
 
-    const orderItems = cart.items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-    }));
+    const orderItems = cart.items.map((item: CartItem) => ({
+  productId: item.productId,
+  quantity: item.quantity,
+  }));
 
     const shipping = {
       firstName: form.firstName,
