@@ -51,3 +51,19 @@ export interface Product extends ProductListItem {
   reviews?: MockReview[];
   viewingSeed?: number;
 }
+
+// ── Cart types (added) ───────────────────────────────────────────────────────
+
+export interface CartItem extends Omit<ProductListItem, 'price'> {
+  quantity: number;
+  /** Already formatted price string, e.g. "$29.99" */
+  priceFormatted: string;
+  /** Numeric price used for calculations */
+  price: number;
+}
+
+export interface Cart {
+  items: CartItem[];
+  total: number;
+  itemCount: number;
+}
