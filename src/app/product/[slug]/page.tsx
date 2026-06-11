@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getProduct } from "@/lib/graphql/products";
 import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { ProductActions } from "@/components/ProductActions";   // 👈 import
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -11,15 +11,25 @@ interface Props {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
 
-  // Reject invalid or missing slugs early
   if (!slug || slug === "undefined") notFound();
 
   const product = await getProduct(slug);
   if (!product) notFound();
 
+  // Build the CartItem‑compatible object (without quantity)
+  const cartItem = {
+    productId: product.databaseId,       // use databaseId (number)
+    name: product.name,
+    slug: product.slug,
+    price: parseFloat(product.price) || 0,   // convert string → number
+    image: {
+      sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
+      altText: product.image?.altText || product.name,
+    },
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      {/* Simple product detail layout (customise as you like) */}
       <div className="grid gap-8 md:grid-cols-2">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
           {product.image ? (
@@ -40,15 +50,15 @@ export default async function ProductPage({ params }: Props) {
         <div className="flex flex-col gap-4">
           <h1 className="text-3xl font-bold">{product.name}</h1>
           <p className="text-2xl font-semibold text-primary">
-            {formatPrice(product.price)}
+            {formatPrice(parseFloat(product.price) || 0)}
           </p>
           <div
             className="prose text-muted-foreground"
             dangerouslySetInnerHTML={{ __html: product.description || "" }}
           />
-          <Button size="lg" className="w-full md:w-auto">
-            Add to cart
-          </Button>
+
+          {/* Replace the static button with ProductActions */}
+          <ProductActions item={cartItem} />
         </div>
       </div>
     </div>

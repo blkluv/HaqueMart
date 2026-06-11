@@ -46,7 +46,10 @@ interface ShippingAddress {
 export async function placeOrder(
   items: OrderItem[],
   shipping: ShippingAddress,
-): Promise<{ success: true; orderId: number } | { success: false; error: string }> {
+): Promise<
+  | { success: true; orderId: number; orderKey: string }
+  | { success: false; error: string }
+> {
   if (!items.length) {
     return { success: false, error: "No items in cart" };
   }
@@ -66,11 +69,11 @@ export async function placeOrder(
     quantity: item.quantity,
   }));
 
-  // Order payload – payment method set to "bacs" (bank transfer).
-  // Change to "stripe" or another gateway slug if needed.
+  // ⚠️ Change 'payment_method' to the slug of your installed gateway (e.g., 'stripe', 'paypal', 'cod').
+  // Using 'stripe' here so the order redirects to the Stripe payment page.
   const payload = {
-    payment_method: "bacs",
-    payment_method_title: "Direct Bank Transfer",
+    payment_method: "stripe",
+    payment_method_title: "Credit Card (Stripe)",
     set_paid: false,
     billing: {
       first_name: shipping.firstName,
@@ -116,7 +119,11 @@ export async function placeOrder(
     }
 
     const order = await res.json();
-    return { success: true, orderId: order.id };
+    return {
+      success: true,
+      orderId: order.id,
+      orderKey: order.order_key,   // ← essential for the payment page URL
+    };
   } catch (error) {
     console.error("Order creation error:", error);
     return { success: false, error: "Network error – please try again" };

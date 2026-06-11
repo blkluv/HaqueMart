@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronLeft, Loader2, Package } from "lucide-react";
+import { ChevronLeft, Loader2, Package, MapPin } from "lucide-react";
 import { useCart } from "@/lib/cart/context";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
@@ -22,6 +22,10 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Address type toggle: "traditional" or "rwatok"
+  const [addressType, setAddressType] = useState<"traditional" | "rwatok">("traditional");
+
   const [form, setForm] = useState({
     email: "",
     firstName: "",
@@ -32,6 +36,7 @@ export default function CheckoutPage() {
     state: "GA",
     postcode: "",
     country: "United States",
+    rwatok: "",   // 3‑word address from rwatok.land
   });
 
   useEffect(() => {
@@ -64,7 +69,6 @@ export default function CheckoutPage() {
     e.preventDefault();
     setError(null);
 
-    // Extra validation: ensure city is exactly Atlanta
     if (form.city.toLowerCase() !== "atlanta") {
       setError("Sorry, shipping is only available within Atlanta, GA.");
       return;
@@ -75,24 +79,42 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Validate 3‑word address if that option is selected
+    if (addressType === "rwatok" && !form.rwatok.trim()) {
+      setError("Please enter your 3‑word address from rwatok.land.");
+      return;
+    }
+
+    // Validate traditional address fields if that option is selected
+    if (addressType === "traditional") {
+      if (!form.address1.trim() || !form.postcode.trim()) {
+        setError("Please complete your shipping address.");
+        return;
+      }
+    }
+
     setPlacing(true);
 
-    // Map cart items to the format expected by placeOrder
     const orderItems = cart.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
     }));
 
+    // When using 3‑word address, we still send basic info but address1 will hold the rwatok string
     const shipping = {
       firstName: form.firstName,
       lastName: form.lastName,
-      address1: form.address1,
+      address1:
+        addressType === "rwatok"
+          ? `3 word address: ///${form.rwatok}`
+          : form.address1,
       address2: form.address2,
       city: form.city,
       state: form.state,
       postcode: form.postcode,
       country: form.country,
       email: form.email,
+      rwatok: addressType === "rwatok" ? form.rwatok : null,
     };
 
     const result = await placeOrder(orderItems, shipping);
@@ -106,7 +128,6 @@ export default function CheckoutPage() {
     }
   }
 
-  // Don't render before hydration — avoids SSR/client cart mismatch
   if (!mounted) return null;
   if (cart.items.length === 0 && !placing) return null;
 
@@ -126,7 +147,7 @@ export default function CheckoutPage() {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]"
       >
-        {/* Left — Shipping form (Atlanta‑only) */}
+        {/* Left — Shipping form */}
         <div className="flex flex-col gap-8">
           {/* Atlanta shipping notice */}
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -162,6 +183,56 @@ export default function CheckoutPage() {
             <h2 className="mb-4 text-base font-semibold">
               Shipping address (Atlanta only)
             </h2>
+
+            {/* Address type selector */}
+            <div className="mb-6 flex gap-4">
+              <button
+                type="button"
+                onClick={() => setAddressType("traditional")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition ${
+                  addressType === "traditional"
+                    ? "border-primary bg-primary/10 text-primary font-semibold"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <MapPin className="size-4" />
+                Traditional Address
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddressType("rwatok")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition ${
+                  addressType === "rwatok"
+                    ? "border-primary bg-primary/10 text-primary font-semibold"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <span className="font-mono font-bold">///</span>
+                3 Word Address
+              </button>
+            </div>
+
+            {/* rwatok.land info & link */}
+            {addressType === "rwatok" && (
+              <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                <p className="font-medium">What is a 3‑word address?</p>
+                <p className="mt-1">
+                  A 3‑word address pinpoints any location, like{" "}
+                  <code className="bg-blue-100 px-1 rounded">///keep.it.simple</code>.
+                  <br />
+                  <a
+                    href="https://rwatok.land"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-semibold hover:text-blue-600"
+                  >
+                    Find your 3‑word address on rwatok.land
+                  </a>{" "}
+                  (opens in a new tab).
+                </p>
+              </div>
+            )}
+
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -190,35 +261,68 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <div>
-                <label className={labelClass}>Address line 1</label>
-                <input
-                  type="text"
-                  required
-                  autoComplete="address-line1"
-                  placeholder="123 Peachtree Street"
-                  value={form.address1}
-                  onChange={setField("address1")}
-                  className={inputClass}
-                />
-              </div>
+              {/* Traditional address fields */}
+              {addressType === "traditional" && (
+                <>
+                  <div>
+                    <label className={labelClass}>Address line 1</label>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="address-line1"
+                      placeholder="123 Peachtree Street"
+                      value={form.address1}
+                      onChange={setField("address1")}
+                      className={inputClass}
+                    />
+                  </div>
 
-              <div>
-                <label className={labelClass}>
-                  Address line 2{" "}
-                  <span className="font-normal text-muted-foreground">
-                    (optional)
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  autoComplete="address-line2"
-                  placeholder="Apt 4B"
-                  value={form.address2}
-                  onChange={setField("address2")}
-                  className={inputClass}
-                />
-              </div>
+                  <div>
+                    <label className={labelClass}>
+                      Address line 2{" "}
+                      <span className="font-normal text-muted-foreground">
+                        (optional)
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      autoComplete="address-line2"
+                      placeholder="Apt 4B"
+                      value={form.address2}
+                      onChange={setField("address2")}
+                      className={inputClass}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* 3 Word Address field */}
+              {addressType === "rwatok" && (
+                <div>
+                  <label className={labelClass}>
+                    Your 3‑word address{" "}
+                    <span className="font-normal text-muted-foreground">
+                      (e.g. ///keep.it.simple)
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-mono">
+                      ///
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="keep.it.simple"
+                      value={form.rwatok}
+                      onChange={(e) => {
+                        let cleaned = e.target.value.replace(/^\/\/\//, "").trim();
+                        setForm((f) => ({ ...f, rwatok: cleaned }));
+                      }}
+                      className={`${inputClass} pl-12 font-mono`}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
