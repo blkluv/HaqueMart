@@ -108,18 +108,20 @@ export default function CheckoutPage() {
     if (result.success) {
       clearCart();
 
-      // ✅ FIX: Fetch the WooCommerce‑generated payment URL from our backend endpoint
+      // ✅ NEW: Fetch the Stripe Checkout URL directly from our endpoint
       try {
         const paymentRes = await fetch(`/api/order-payment-url/${result.orderId}`);
         const paymentData = await paymentRes.json();
 
-        if (paymentData.success && paymentData.paymentUrl) {
-          router.push(paymentData.paymentUrl);
+        if (paymentData.success && paymentData.paymentGatewayUrl) {
+          // Redirect straight to Stripe (bypass WooCommerce order-pay page)
+          window.location.href = paymentData.paymentGatewayUrl;
         } else {
-          throw new Error(paymentData.error || "Invalid payment URL response");
+          throw new Error(paymentData.error || "No payment URL returned");
         }
       } catch (err) {
-        setError("Could not retrieve payment page. Please contact support.");
+        console.error("Payment redirect error:", err);
+        setError("Could not start payment. Please contact support.");
         setPlacing(false);
       }
     } else {
