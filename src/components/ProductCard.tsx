@@ -162,17 +162,27 @@ export function ProductCard({ product }: Props) {
             )}
           </div>
           <AddToCartButton
-            item={{
-              productId: product.databaseId,
-              name: product.name,
-              slug: product.slug,
-              price: parsePrice(product.price ?? product.regularPrice),
-              priceFormatted: product.price ?? product.regularPrice ?? "$0",
-              image: product.image,
-            }}
-            disabled={isOutOfStock}
-            size="sm"
-          />
+  item={{
+    productId: product.databaseId,
+    databaseId: product.databaseId,
+    name: product.name,
+    slug: product.slug,
+    price: parsePrice(product.price ?? product.regularPrice),
+    priceFormatted: product.price ?? product.regularPrice ?? "$0",
+    regularPrice: product.regularPrice,
+    salePrice: product.salePrice,
+    stockStatus: product.stockStatus,
+    image: product.image,
+    productCategories: product.productCategories,
+    rating: product.rating,
+    reviewCount: product.reviewCount,
+    soldThisWeek: product.soldThisWeek,
+    stockCount: product.stockCount,
+    badge: product.badge,
+  }}
+  disabled={isOutOfStock}
+  size="sm"
+/>
         </div>
       </div>
     </div>
