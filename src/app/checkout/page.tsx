@@ -92,20 +92,13 @@ export default function CheckoutPage() {
     if (result.success) {
       clearCart();
 
-      /**
-       * 🔥 FIX CORE ISSUE:
-       * You were pointing to API domain incorrectly or missing WooCommerce frontend base.
-       *
-       * order-pay MUST be on the WooCommerce FRONTEND domain, not API domain.
-       */
-      const wpBaseUrl =
-        process.env.NEXT_PUBLIC_WC_URL ||
-        process.env.NEXT_PUBLIC_WP_URL ||
-        "https://campcreekmarket.com";
+      // ✅ FIXED: no WooCommerce order-pay assumption
+      // Your system uses step checkout flow
+      const redirectUrl =
+        result.checkoutUrl ||
+        "https://api.campcreekmarket.com/step/checkout/";
 
-      const payUrl = `${wpBaseUrl}/checkout/order-pay/${result.orderId}/?pay_for_order=true&key=${result.orderKey}`;
-
-      router.push(payUrl);
+      router.push(redirectUrl);
     } else {
       setPlacing(false);
       setError(result.error || "Something went wrong. Please try again.");
@@ -117,90 +110,127 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10">
-
-      <Link href="/" className="mb-8 inline-flex items-center gap-1 text-sm text-muted-foreground">
+      <Link
+        href="/"
+        className="mb-8 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ChevronLeft className="size-4" />
         Continue shopping
       </Link>
 
       <h1 className="text-2xl font-bold mb-8">Checkout</h1>
 
-      <form onSubmit={handleSubmit} className="grid lg:grid-cols-[1fr_380px] gap-10">
-
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]"
+      >
         {/* LEFT */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
 
           {error && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-lg border border-red-200">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {error}
             </div>
           )}
 
-          <input
-            className={inputClass}
-            type="email"
-            placeholder="Email"
-            required
-            value={form.email}
-            onChange={setField("email")}
-          />
-
-          <input
-            className={inputClass}
-            placeholder="First Name"
-            required
-            value={form.firstName}
-            onChange={setField("firstName")}
-          />
-
-          <input
-            className={inputClass}
-            placeholder="Last Name"
-            required
-            value={form.lastName}
-            onChange={setField("lastName")}
-          />
-
-          <input
-            className={inputClass}
-            placeholder="Address"
-            required={addressType === "traditional"}
-            value={form.address1}
-            onChange={setField("address1")}
-            disabled={addressType === "rwatok"}
-          />
-
-          {addressType === "rwatok" && (
+          <section>
+            <h2 className="mb-4 text-base font-semibold">Contact</h2>
             <input
-              className={inputClass}
-              placeholder="3-word address (keep.it.simple)"
+              type="email"
               required
-              value={form.rwatok}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  rwatok: e.target.value.replace(/^\/\/\//, ""),
-                }))
-              }
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={setField("email")}
+              className={inputClass}
             />
-          )}
+          </section>
 
-          <input
-            className={inputClass}
-            placeholder="ZIP"
-            required
-            value={form.postcode}
-            onChange={setField("postcode")}
-          />
+          <section>
+            <h2 className="mb-4 text-base font-semibold">
+              Shipping address
+            </h2>
+
+            {/* Address toggle */}
+            <div className="mb-6 flex gap-4">
+              <button
+                type="button"
+                onClick={() => setAddressType("traditional")}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Traditional
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAddressType("rwatok")}
+                className="px-4 py-2 border rounded-lg"
+              >
+                3 Word
+              </button>
+            </div>
+
+            <input
+              type="text"
+              required
+              placeholder="First Name"
+              value={form.firstName}
+              onChange={setField("firstName")}
+              className={inputClass}
+            />
+
+            <input
+              type="text"
+              required
+              placeholder="Last Name"
+              value={form.lastName}
+              onChange={setField("lastName")}
+              className={inputClass}
+            />
+
+            {addressType === "traditional" && (
+              <input
+                type="text"
+                required
+                placeholder="Address"
+                value={form.address1}
+                onChange={setField("address1")}
+                className={inputClass}
+              />
+            )}
+
+            {addressType === "rwatok" && (
+              <input
+                type="text"
+                required
+                placeholder="keep.it.simple"
+                value={form.rwatok}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    rwatok: e.target.value.replace(/^\/\/\//, ""),
+                  }))
+                }
+                className={inputClass}
+              />
+            )}
+
+            <input
+              type="text"
+              required
+              placeholder="ZIP"
+              value={form.postcode}
+              onChange={setField("postcode")}
+              className={inputClass}
+            />
+          </section>
         </div>
 
         {/* RIGHT */}
         <aside className="border rounded-xl p-6 h-fit">
-
           <h2 className="font-semibold mb-4">Order Summary</h2>
 
           {cart.items.map((item) => (
-            <div key={item.productId} className="flex justify-between text-sm py-1">
+            <div key={item.productId} className="flex justify-between py-1 text-sm">
               <span>{item.name}</span>
               <span>{formatPrice(item.price * item.quantity)}</span>
             </div>
@@ -223,9 +253,8 @@ export default function CheckoutPage() {
           </Button>
 
           <p className="text-xs text-muted-foreground mt-3">
-            Secure checkout powered by WooCommerce + Stripe
+            Secure checkout via WooCommerce + Stripe
           </p>
-
         </aside>
       </form>
     </div>
