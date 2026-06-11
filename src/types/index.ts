@@ -54,11 +54,12 @@ export interface Product extends ProductListItem {
 
 // ── Mock review (if you have one) — keep or remove as needed ──────────────────
 export interface MockReview {
-  id: number;
+  id: string;    // ✅ fixed
   author: string;
   rating: number;
-  content: string;
   date: string;
+  verified?: boolean;
+  body: string;
 }
 
 // ── Cart types ────────────────────────────────────────────────────────────────
