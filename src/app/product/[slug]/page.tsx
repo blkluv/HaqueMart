@@ -16,41 +16,47 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProduct(slug);
   if (!product) notFound();
 
-  // Build a complete CartItem‑compatible object (without quantity)
   const numericPrice = parseFloat(product.price ?? "0") || 0;
 
-  const cartItem = {
-    productId: product.databaseId,
-    databaseId: product.databaseId,
-    name: product.name,
-    slug: product.slug,
-    price: numericPrice,
-    priceFormatted: formatPrice(numericPrice),          // ← required by CartItem type
-    regularPrice: product.regularPrice
-      ? parseFloat(product.regularPrice)
-      : numericPrice,
-    salePrice: product.salePrice
-      ? parseFloat(product.salePrice)
-      : null,
-    stockStatus: product.stockStatus || "IN_STOCK",
-    stockCount: product.stockQuantity ?? 0,
-    image: {
-      sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
-      altText: product.image?.altText || product.name,
-    },
-    productCategories: {
-      nodes: product.productCategories?.nodes.map(
-        (cat: { name: string; slug: string }) => ({
-          name: cat.name,
-          slug: cat.slug,
-        })
-      ) ?? [],
-    },
-    rating: product.averageRating ?? 0,
-    reviewCount: product.reviewCount ?? 0,
-    soldThisWeek: 0,
-    badge: "",
-  };
+  // Use type assertion 'as any' for fields that might not exist on the Product type
+const cartItem = {
+  productId: product.databaseId,
+  databaseId: product.databaseId,
+  name: product.name,
+  slug: product.slug,
+  price: numericPrice,
+  priceFormatted: formatPrice(numericPrice),
+
+  regularPrice: product.regularPrice
+    ? parseFloat(product.regularPrice.replace(/[^0-9.]/g, ""))
+    : numericPrice,
+
+  salePrice: product.salePrice
+    ? parseFloat(product.salePrice.replace(/[^0-9.]/g, ""))
+    : null,
+
+  stockStatus: product.stockStatus || "IN_STOCK",
+
+  stockCount: product.stockQuantity ?? 0,
+
+  image: {
+    sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
+    altText: product.image?.altText || product.name,
+  },
+
+  productCategories: {
+    nodes:
+      product.productCategories?.nodes.map((cat) => ({
+        name: cat.name,
+        slug: cat.slug,
+      })) ?? [],
+  },
+
+  rating: product.rating ?? 0,
+  reviewCount: product.reviewCount ?? 0,
+  soldThisWeek: product.soldThisWeek ?? 0,
+  badge: product.badge,
+};
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
