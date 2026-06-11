@@ -108,27 +108,10 @@ export default function CheckoutPage() {
     if (result.success) {
       clearCart();
 
-      // ✅ TEMPORARY TEST: Direct redirect to WooCommerce order-pay page
+      // ✅ Direct redirect to WooCommerce order-pay page
       const testPayUrl = `https://api.campcreekmarket.com/checkout/order-pay/${result.orderId}/?pay_for_order=true&key=${result.orderKey}`;
       window.location.href = testPayUrl;
-      return; // Stop here – do not run the Stripe fetch
-
-      /* 
-      // OLD CODE (commented out for testing)
-      try {
-        const paymentRes = await fetch(`/api/order-payment-url/${result.orderId}`);
-        const paymentData = await paymentRes.json();
-        if (paymentData.success && paymentData.paymentGatewayUrl) {
-          window.location.href = paymentData.paymentGatewayUrl;
-        } else {
-          throw new Error(paymentData.error || "No payment URL returned");
-        }
-      } catch (err) {
-        console.error("Payment redirect error:", err);
-        setError("Could not start payment. Please contact support.");
-        setPlacing(false);
-      }
-      */
+      return;
     } else {
       setPlacing(false);
       setError(result.error || "Something went wrong. Please try again.");
