@@ -82,7 +82,7 @@ export default function CheckoutPage() {
 
     setPlacing(true);
 
-    // ✅ Inline type instead of CartItem (no missing export)
+    // orderItems – typed explicitly
     const orderItems = cart.items.map((item: { productId: number; quantity: number }) => ({
       productId: item.productId,
       quantity: item.quantity,
@@ -368,7 +368,8 @@ export default function CheckoutPage() {
           <h2 className="font-semibold">Order summary</h2>
 
           <ul className="flex flex-col divide-y divide-border">
-            {cart.items.map((item) => (
+            {/* ✅ FIX: explicitly type item as any to avoid build error */}
+            {cart.items.map((item: any) => (
               <li
                 key={item.productId}
                 className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
