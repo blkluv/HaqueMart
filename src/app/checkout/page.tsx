@@ -65,68 +65,71 @@ export default function CheckoutPage() {
     };
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
+async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  setError(null);
 
-    if (form.city.toLowerCase() !== "atlanta") {
-      setError("Sorry, shipping is only available within Atlanta, GA.");
+  if (form.city.toLowerCase() !== "atlanta") {
+    setError("Sorry, shipping is only available within Atlanta, GA.");
+    return;
+  }
+
+  if (cart.items.length === 0) {
+    setError("Your cart is empty.");
+    return;
+  }
+
+  if (addressType === "rwatok" && !form.rwatok.trim()) {
+    setError("Please enter your 3‑word address from rwatok.land.");
+    return;
+  }
+
+  if (addressType === "traditional") {
+    if (!form.address1.trim() || !form.postcode.trim()) {
+      setError("Please complete your shipping address.");
       return;
-    }
-
-    if (cart.items.length === 0) {
-      setError("Your cart is empty.");
-      return;
-    }
-
-    // Validate 3‑word address if that option is selected
-    if (addressType === "rwatok" && !form.rwatok.trim()) {
-      setError("Please enter your 3‑word address from rwatok.land.");
-      return;
-    }
-
-    // Validate traditional address fields if that option is selected
-    if (addressType === "traditional") {
-      if (!form.address1.trim() || !form.postcode.trim()) {
-        setError("Please complete your shipping address.");
-        return;
-      }
-    }
-
-    setPlacing(true);
-
-    const orderItems = cart.items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-    }));
-
-    // When using 3‑word address, we still send basic info but address1 will hold the rwatok string
-    const shipping = {
-      firstName: form.firstName,
-      lastName: form.lastName,
-      address1:
-        addressType === "rwatok"
-          ? `3 word address: ///${form.rwatok}`
-          : form.address1,
-      address2: form.address2,
-      city: form.city,
-      state: form.state,
-      postcode: form.postcode,
-      country: form.country,
-      email: form.email,
-      rwatok: addressType === "rwatok" ? form.rwatok : null,
-    };
-
-    const result = await placeOrder(orderItems, shipping);
-
-    if (result.success) {
-      clearCart();
-      router.push(`/checkout/success?order=${result.orderId}`);
-    } else {
-      setPlacing(false);
-      setError(result.error || "Something went wrong. Please try again.");
     }
   }
+
+  setPlacing(true);
+
+  const orderItems = cart.items.map((item) => ({
+    productId: item.productId,
+    quantity: item.quantity,
+  }));
+
+  const shipping = {
+    firstName: form.firstName,
+    lastName: form.lastName,
+    address1:
+      addressType === "rwatok"
+        ? `3 word address: ///${form.rwatok}`
+        : form.address1,
+    address2: form.address2,
+    city: form.city,
+    state: form.state,
+    postcode: form.postcode,
+    country: form.country,
+    email: form.email,
+    rwatok: addressType === "rwatok" ? form.rwatok : null,
+  };
+
+  const result = await placeOrder(orderItems, shipping);
+
+  if (result.success) {
+    // Clear the cart now
+    clearCart();
+
+    // Redirect to the WooCommerce payment page (Stripe)
+    const wpBaseUrl = process.env.NEXT_PUBLIC_WP_URL || "https://yourstore.com";
+    const payUrl = `${wpBaseUrl}/checkout/order-pay/${result.orderId}/?pay_for_order=true&key=${result.orderKey}`;
+
+    router.push(payUrl);
+  } else {
+    setPlacing(false);
+    setError(result.error || "Something went wrong. Please try again.");
+  }
+}
 
   if (!mounted) return null;
   if (cart.items.length === 0 && !placing) return null;

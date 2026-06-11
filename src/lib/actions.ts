@@ -25,7 +25,7 @@ export async function fetchMoreProducts(
   }
 }
 
-// ── New: place a WooCommerce order ───────────────────────────────────────────
+// ── Place a WooCommerce order ─────────────────────────────────────────────
 interface OrderItem {
   productId: number;
   quantity: number;
@@ -41,6 +41,7 @@ interface ShippingAddress {
   postcode: string;
   country: string;
   email: string;
+  rwatok?: string | null;   // <-- 3‑word address from rwatok.land
 }
 
 export async function placeOrder(
@@ -63,16 +64,15 @@ export async function placeOrder(
     return { success: false, error: "Server configuration error" };
   }
 
-  // Build line items for WooCommerce
+  // Build line items
   const line_items = items.map((item) => ({
     product_id: item.productId,
     quantity: item.quantity,
   }));
 
-  // ⚠️ Change 'payment_method' to the slug of your installed gateway (e.g., 'stripe', 'paypal', 'cod').
-  // Using 'stripe' here so the order redirects to the Stripe payment page.
-  const payload = {
-    payment_method: "stripe",
+  // Build order payload with optional rwatok meta data
+  const payload: any = {
+    payment_method: "stripe",                 // use exact slug of your Stripe gateway
     payment_method_title: "Credit Card (Stripe)",
     set_paid: false,
     billing: {
@@ -97,7 +97,22 @@ export async function placeOrder(
       country: shipping.country,
     },
     line_items,
+    meta_data: [],
   };
+
+  // Attach the 3‑word address as order meta if provided
+  if (shipping.rwatok) {
+    payload.meta_data.push({
+      key: "_rwatok_address",
+      label: "3 Word Address (rwatok.land)",
+      value: `///${shipping.rwatok}`,
+    });
+    payload.meta_data.push({
+      key: "_delivery_note",
+      label: "Delivery Note",
+      value: `Deliver to 3 word address: ///${shipping.rwatok}`,
+    });
+  }
 
   try {
     const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64");
@@ -122,7 +137,7 @@ export async function placeOrder(
     return {
       success: true,
       orderId: order.id,
-      orderKey: order.order_key,   // ← essential for the payment page URL
+      orderKey: order.order_key,
     };
   } catch (error) {
     console.error("Order creation error:", error);
