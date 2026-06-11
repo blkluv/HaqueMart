@@ -9,7 +9,6 @@ import { useCart } from "@/lib/cart/context";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 import { placeOrder } from "@/lib/actions";
-import type { CartItem } from "@/types"; // ✅ added
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors";
@@ -83,8 +82,8 @@ export default function CheckoutPage() {
 
     setPlacing(true);
 
-    // ✅ Explicit type annotation added
-    const orderItems = cart.items.map((item: CartItem) => ({
+    // ✅ Inline type instead of CartItem (no missing export)
+    const orderItems = cart.items.map((item: { productId: number; quantity: number }) => ({
       productId: item.productId,
       quantity: item.quantity,
     }));
