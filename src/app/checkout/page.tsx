@@ -82,8 +82,8 @@ export default function CheckoutPage() {
 
     setPlacing(true);
 
-    // orderItems – typed explicitly
-    const orderItems = cart.items.map((item: { productId: number; quantity: number }) => ({
+    // No more any casts – cart.items is already typed as CartItem[]
+    const orderItems = cart.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
     }));
@@ -368,8 +368,8 @@ export default function CheckoutPage() {
           <h2 className="font-semibold">Order summary</h2>
 
           <ul className="flex flex-col divide-y divide-border">
-            {/* ✅ FIX: explicitly type item as any to avoid build error */}
-            {cart.items.map((item: any) => (
+            {/* Now fully typed – no any needed */}
+            {cart.items.map((item) => (
               <li
                 key={item.productId}
                 className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
