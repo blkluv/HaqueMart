@@ -1,5 +1,5 @@
+// app/product/[slug]/page.tsx
 import { notFound } from "next/navigation";
-import { getProduct } from "@/lib/graphql/products";
 import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
 import { ProductActions } from "@/components/ProductActions";
@@ -14,26 +14,89 @@ export default async function ProductPage({ params }: Props) {
 
   if (!slug || slug === "undefined") notFound();
 
-  let product;
-  try {
-    product = await getProduct(slug);
-  } catch (error) {
-    console.error("Failed to fetch product:", error);
+  let product = null;
+  let errorMsg = null;
+
+  const graphqlUrl = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL || process.env.WP_GRAPHQL_URL;
+
+  if (!graphqlUrl) {
+    errorMsg = "Missing GraphQL endpoint environment variable";
+  } else {
+    try {
+      const res = await fetch(graphqlUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: `
+            query GetProduct($slug: String!) {
+              product(slug: $slug) {
+                databaseId
+                name
+                slug
+                description
+                price
+                regularPrice
+                salePrice
+                stockStatus
+                stockQuantity
+                averageRating
+                reviewCount
+                soldThisWeek
+                badge
+                image {
+                  sourceUrl
+                  altText
+                }
+                productCategories {
+                  nodes {
+                    name
+                    slug
+                  }
+                }
+              }
+            }
+          `,
+          variables: { slug },
+        }),
+        next: { revalidate: 60 },
+      });
+
+      const json = await res.json();
+
+      if (json.errors) {
+        errorMsg = json.errors[0].message;
+      } else if (!json.data?.product) {
+        errorMsg = "Product not found";
+      } else {
+        product = json.data.product;
+      }
+    } catch (err: any) {
+      errorMsg = err.message;
+    }
+  }
+
+  // Show error clearly if something failed
+  if (errorMsg) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-10 text-center">
-        <h1 className="text-2xl font-bold text-red-600">Something went wrong</h1>
-        <p className="mt-2">Unable to load product. Please try again later.</p>
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-800">
+          <h2 className="text-xl font-bold">Something went wrong</h2>
+          <pre className="mt-2 whitespace-pre-wrap text-sm">{errorMsg}</pre>
+          <p className="mt-4 text-sm">
+            Check your GraphQL endpoint and that the product slug "{slug}" exists.
+          </p>
+        </div>
       </div>
     );
   }
 
   if (!product) notFound();
 
-  // Safely extract price (handle string or number)
+  // Safely extract price
   const rawPrice = product.price ?? product.regularPrice ?? product.salePrice ?? "0";
   const numericPrice = typeof rawPrice === "number" ? rawPrice : parseFloat(String(rawPrice)) || 0;
 
-  // Build cart item with safe defaults
+  // Build cart item
   const cartItem = {
     productId: product.databaseId,
     databaseId: product.databaseId,
@@ -50,7 +113,7 @@ export default async function ProductPage({ params }: Props) {
       altText: product.image?.altText || product.name || "Product image",
     },
     productCategories: {
-      nodes: (product.productCategories?.nodes || []).map((cat) => ({
+      nodes: (product.productCategories?.nodes || []).map((cat: any) => ({
         name: cat.name,
         slug: cat.slug,
       })),
