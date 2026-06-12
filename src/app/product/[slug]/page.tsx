@@ -5,64 +5,71 @@ import { formatPrice } from "@/lib/utils";
 import { ProductActions } from "@/components/ProductActions";
 
 interface Props {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string }> | { slug: string };
 }
 
 export default async function ProductPage({ params }: Props) {
-  const { slug } = await params;
+  // Handle both Next.js 15 (Promise) and 13/14 (plain object)
+  const slug = "then" in params ? (await params).slug : params.slug;
 
   if (!slug || slug === "undefined") notFound();
 
-  const product = await getProduct(slug);
+  let product;
+  try {
+    product = await getProduct(slug);
+  } catch (error) {
+    console.error("Failed to fetch product:", error);
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Something went wrong</h1>
+        <p className="mt-2">Unable to load product. Please try again later.</p>
+      </div>
+    );
+  }
+
   if (!product) notFound();
 
-  // ✅ SAFE PRICE EXTRACTION – works for all product types
-  // Tries price, regularPrice, salePrice in order, defaults to "0"
-  const rawPrice =
-    (product as any).price ??
-    (product as any).regularPrice ??
-    (product as any).salePrice ??
-    "0";
+  // Safely extract price (handle string or number)
+  const rawPrice = product.price ?? product.regularPrice ?? product.salePrice ?? "0";
+  const numericPrice = typeof rawPrice === "number" ? rawPrice : parseFloat(String(rawPrice)) || 0;
 
-  const numericPrice = parseFloat(String(rawPrice)) || 0;
-
-  // Build cart item with correct types (same as before, but price is now a number)
+  // Build cart item with safe defaults
   const cartItem = {
     productId: product.databaseId,
     databaseId: product.databaseId,
-    name: product.name,
+    name: product.name || "Unnamed Product",
     slug: product.slug,
     price: numericPrice,
     priceFormatted: formatPrice(numericPrice),
-    regularPrice: (product as any).regularPrice ?? null,
-    salePrice: (product as any).salePrice ?? null,
-    stockStatus: (product as any).stockStatus || "IN_STOCK",
-    stockCount: (product as any).stockQuantity ?? 0,
+    regularPrice: product.regularPrice ?? null,
+    salePrice: product.salePrice ?? null,
+    stockStatus: product.stockStatus || "IN_STOCK",
+    stockCount: product.stockQuantity ?? 0,
     image: {
       sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
-      altText: product.image?.altText || product.name,
+      altText: product.image?.altText || product.name || "Product image",
     },
     productCategories: {
-      nodes:
-        product.productCategories?.nodes.map((cat) => ({
-          name: cat.name,
-          slug: cat.slug,
-        })) ?? [],
+      nodes: (product.productCategories?.nodes || []).map((cat) => ({
+        name: cat.name,
+        slug: cat.slug,
+      })),
     },
-    rating: (product as any).averageRating ?? 0,
-    reviewCount: (product as any).reviewCount ?? 0,
-    soldThisWeek: (product as any).soldThisWeek ?? 0,
-    badge: (product as any).badge ?? undefined,
+    rating: product.averageRating ?? 0,
+    reviewCount: product.reviewCount ?? 0,
+    soldThisWeek: product.soldThisWeek ?? 0,
+    badge: product.badge ?? undefined,
   };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="grid gap-8 md:grid-cols-2">
+        {/* Product Image */}
         <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-          {product.image ? (
+          {product.image?.sourceUrl ? (
             <Image
               src={product.image.sourceUrl}
-              alt={product.image.altText || product.name}
+              alt={product.image.altText || product.name || "Product"}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -74,15 +81,18 @@ export default async function ProductPage({ params }: Props) {
           )}
         </div>
 
+        {/* Product Details */}
         <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-bold">{product.name}</h1>
+          <h1 className="text-3xl font-bold">{product.name || "Product"}</h1>
           <p className="text-2xl font-semibold text-primary">
             {formatPrice(numericPrice)}
           </p>
-          <div
-            className="prose text-muted-foreground"
-            dangerouslySetInnerHTML={{ __html: product.description || "" }}
-          />
+          {product.description && (
+            <div
+              className="prose text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
+          )}
           <ProductActions item={cartItem} />
         </div>
       </div>
