@@ -1,42 +1,36 @@
-const endpoint = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ?? "";
+const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL || process.env.WP_GRAPHQL_URL;
 
-export function isWpConfigured(): boolean {
-  return Boolean(endpoint);
+if (!WP_GRAPHQL_URL) {
+  throw new Error("Missing GraphQL endpoint environment variable");
 }
 
 export async function wpgql<T>(
   query: string,
-  variables: Record<string, unknown> = {},
-  revalidate = 60,
+  variables?: Record<string, any>
 ): Promise<T> {
-  if (!endpoint) {
-    throw new Error("NEXT_PUBLIC_WP_GRAPHQL_URL is not configured");
-  }
-
-  const res = await fetch(endpoint, {
+  const res = await fetch(WP_GRAPHQL_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ query, variables }),
-    next: { revalidate },
+    next: { revalidate: 60 }, // optional: ISR cache
   });
 
   if (!res.ok) {
-    throw new Error(`WPGraphQL request failed: ${res.status} ${res.statusText}`);
+    throw new Error(`GraphQL HTTP error: ${res.status} ${res.statusText}`);
   }
 
-  const json = (await res.json()) as {
-    data?: T;
-    errors?: { message: string }[];
-  };
+  const json = await res.json();
 
-  if (json.errors?.length) {
-    throw new Error(json.errors[0]?.message ?? "GraphQL error");
+  if (json.errors) {
+    const firstError = json.errors[0];
+    throw new Error(`GraphQL error: ${firstError.message}`);
   }
 
   if (!json.data) {
-    throw new Error("No data returned from WPGraphQL");
+    throw new Error("GraphQL response missing data");
   }
 
-  return json.data;
+  return json.data as T;
 }
