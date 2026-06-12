@@ -16,9 +16,17 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProduct(slug);
   if (!product) notFound();
 
-  const numericPrice = parseFloat(product.price ?? "0") || 0;
+  // ✅ SAFE PRICE EXTRACTION – works for all product types
+  // Tries price, regularPrice, salePrice in order, defaults to "0"
+  const rawPrice =
+    (product as any).price ??
+    (product as any).regularPrice ??
+    (product as any).salePrice ??
+    "0";
 
-  // Build cart item with correct types
+  const numericPrice = parseFloat(String(rawPrice)) || 0;
+
+  // Build cart item with correct types (same as before, but price is now a number)
   const cartItem = {
     productId: product.databaseId,
     databaseId: product.databaseId,
@@ -26,19 +34,14 @@ export default async function ProductPage({ params }: Props) {
     slug: product.slug,
     price: numericPrice,
     priceFormatted: formatPrice(numericPrice),
-
-    // Keep as strings (or null) – no parsing
     regularPrice: (product as any).regularPrice ?? null,
     salePrice: (product as any).salePrice ?? null,
-
     stockStatus: (product as any).stockStatus || "IN_STOCK",
     stockCount: (product as any).stockQuantity ?? 0,
-
     image: {
       sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
       altText: product.image?.altText || product.name,
     },
-
     productCategories: {
       nodes:
         product.productCategories?.nodes.map((cat) => ({
@@ -46,11 +49,10 @@ export default async function ProductPage({ params }: Props) {
           slug: cat.slug,
         })) ?? [],
     },
-
     rating: (product as any).averageRating ?? 0,
     reviewCount: (product as any).reviewCount ?? 0,
     soldThisWeek: (product as any).soldThisWeek ?? 0,
-    badge: (product as any).badge ?? undefined, // or undefined to match string | undefined
+    badge: (product as any).badge ?? undefined,
   };
 
   return (
