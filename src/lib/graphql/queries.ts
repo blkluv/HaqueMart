@@ -75,6 +75,27 @@ export const GET_PRODUCT = /* GraphQL */ `
           }
         }
       }
+      ... on ExternalProduct {
+        price
+        regularPrice
+        salePrice
+        stockStatus
+        externalUrl
+        buttonText
+      }
+      ... on GroupProduct {
+        price
+        regularPrice
+        salePrice
+        stockStatus
+        groupedProducts {
+          nodes {
+            id
+            name
+          }
+        }
+      }
+      # Add any other product types you have (e.g., BookingProduct, Subscription)
       image {
         sourceUrl
         altText
