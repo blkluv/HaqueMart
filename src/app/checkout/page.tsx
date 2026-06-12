@@ -109,8 +109,8 @@ export default function CheckoutPage() {
       clearCart();
 
       // ✅ Direct redirect to WooCommerce order-pay page
-      const testPayUrl = `https://api.campcreekmarket.com/checkout/order-pay/${result.orderId}/?pay_for_order=true&key=${result.orderKey}`;
-      window.location.href = testPayUrl;
+      const payUrl = `/checkout/payment?order=${result.orderId}&key=${result.orderKey}`;
+      router.push(payUrl);
       return;
     } else {
       setPlacing(false);
