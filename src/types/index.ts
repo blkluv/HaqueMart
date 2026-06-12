@@ -47,7 +47,7 @@ export interface Product extends ProductListItem {
 
   stockQuantity: number | null;
   galleryImages: { nodes: WPImage[] };
-
+  averageRating?: number;        // ✅ ADDED – used by product page
   reviews?: MockReview[];
   viewingSeed?: number;
 }
