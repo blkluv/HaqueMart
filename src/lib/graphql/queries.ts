@@ -1,8 +1,5 @@
-// lib/graphql/queries.ts
-
-import { gql } from "graphql-request"; // or just export as strings if you're not using gql tag
-
-export const GET_PRODUCTS = gql`
+// Use raw strings – no gql tag needed unless you have a parser
+export const GET_PRODUCTS = `
   query GET_PRODUCTS($first: Int, $after: String, $category: String) {
     products(first: $first, after: $after, where: { category: $category }) {
       nodes {
@@ -34,7 +31,7 @@ export const GET_PRODUCTS = gql`
   }
 `;
 
-export const GET_PRODUCT = gql`
+export const GET_PRODUCT = `
   query GET_PRODUCT($slug: String!) {
     product(slug: $slug) {
       databaseId
@@ -64,7 +61,7 @@ export const GET_PRODUCT = gql`
   }
 `;
 
-export const GET_PRODUCT_CATEGORIES = gql`
+export const GET_PRODUCT_CATEGORIES = `
   query GET_PRODUCT_CATEGORIES {
     productCategories(where: { hideEmpty: true }) {
       nodes {
