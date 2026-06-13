@@ -1,9 +1,14 @@
-// app/product/[slug]/page.tsx
+// src/app/product/[slug]/page.tsx
+
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
 import { ProductActions } from "@/components/ProductActions";
 import type { StockStatus } from "@/types";
+
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+export const revalidate = 0;
 
 interface Props {
   params: { slug: string };
@@ -21,68 +26,62 @@ const mapStockStatus = (status?: string): StockStatus => {
 };
 
 export default async function ProductPage({ params }: Props) {
-  const slug = params.slug;
+  const slug = decodeURIComponent(params.slug);
 
-  if (!slug || slug === "undefined") notFound();
+  if (!slug) notFound();
 
   const graphqlUrl =
     process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ||
     process.env.WP_GRAPHQL_URL;
 
-  if (!graphqlUrl) notFound();
+  if (!graphqlUrl) {
+    throw new Error("Missing GraphQL endpoint environment variable");
+  }
 
   const res = await fetch(graphqlUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-    query: `
-    query GetProduct($slug: ID!) {
-      product(id: $slug, idType: URI) {
-        databaseId
-        name
-        slug
-        description
-        stockQuantity
-        stockStatus
-        averageRating
-        reviewCount
-        image {
-          sourceUrl
-          altText
-        }
-        productCategories {
-          nodes {
+      query: `
+        query GetProduct($slug: ID!) {
+          product(id: $slug, idType: SLUG) {
+            databaseId
             name
             slug
+            description
+            stockQuantity
+            stockStatus
+            averageRating
+            reviewCount
+            image {
+              sourceUrl
+              altText
+            }
+            productCategories {
+              nodes {
+                name
+                slug
+              }
+            }
+            ... on SimpleProduct {
+              price
+              regularPrice
+              salePrice
+            }
+            ... on VariableProduct {
+              price
+              regularPrice
+              salePrice
+            }
           }
         }
-        ... on SimpleProduct {
-          price
-          regularPrice
-          salePrice
-        }
-        ... on VariableProduct {
-          price
-          regularPrice
-          salePrice
-        }
-        ... on ExternalProduct {
-          price
-          regularPrice
-        }
-        ... on GroupProduct {
-          price
-        }
-      }
-    }
-  `,
-  variables: { slug },
+      `,
+      variables: { slug },
     }),
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
 
   const json = await res.json();
-
   const product = json?.data?.product;
 
   if (!product) notFound();
@@ -93,46 +92,42 @@ export default async function ProductPage({ params }: Props) {
     product.salePrice ??
     "0";
 
-  let numericPrice = 0;
-
-  if (typeof rawPrice === "number") {
-    numericPrice = rawPrice;
-  } else {
-    const match = String(rawPrice).match(/\d+(?:\.\d+)?/);
-    numericPrice = match ? parseFloat(match[0]) : 0;
-  }
+  const numericPrice =
+    typeof rawPrice === "number"
+      ? rawPrice
+      : parseFloat(String(rawPrice).match(/\d+(\.\d+)?/)?.[0] || "0");
 
   const cartItem = {
     productId: product.databaseId,
     databaseId: product.databaseId,
-    name: product.name || "Unnamed Product",
+    name: product.name,
     slug: product.slug,
 
     price: numericPrice,
     priceFormatted: formatPrice(numericPrice),
+
     regularPrice: product.regularPrice ?? null,
     salePrice: product.salePrice ?? null,
 
     stockStatus: mapStockStatus(product.stockStatus),
-
     stockCount: product.stockQuantity ?? 0,
 
     image: {
       sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
-      altText: product.image?.altText || product.name || "Product image",
+      altText: product.image?.altText || product.name,
     },
 
     productCategories: {
       nodes: (product.productCategories?.nodes || []).map(
-        (cat: { name: string; slug: string }) => ({
-          name: cat.name,
-          slug: cat.slug,
+        (c: { name: string; slug: string }) => ({
+          name: c.name,
+          slug: c.slug,
         })
       ),
     },
 
-    rating: product.averageRating ?? 0,
-    reviewCount: product.reviewCount ?? 0,
+    rating: Number(product.averageRating ?? 0),
+    reviewCount: Number(product.reviewCount ?? 0),
   };
 
   return (
@@ -142,7 +137,7 @@ export default async function ProductPage({ params }: Props) {
           {product.image?.sourceUrl ? (
             <Image
               src={product.image.sourceUrl}
-              alt={product.image.altText || product.name || "Product"}
+              alt={product.image.altText || product.name}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -155,9 +150,7 @@ export default async function ProductPage({ params }: Props) {
         </div>
 
         <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-bold">
-            {product.name || "Product"}
-          </h1>
+          <h1 className="text-3xl font-bold">{product.name}</h1>
 
           <p className="text-2xl font-semibold text-primary">
             {formatPrice(numericPrice)}
@@ -166,7 +159,9 @@ export default async function ProductPage({ params }: Props) {
           {product.description && (
             <div
               className="prose text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: product.description }}
+              dangerouslySetInnerHTML={{
+                __html: product.description,
+              }}
             />
           )}
 
