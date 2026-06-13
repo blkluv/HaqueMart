@@ -1,4 +1,3 @@
-// Use raw strings – no gql tag needed unless you have a parser
 export const GET_PRODUCTS = `
   query GET_PRODUCTS($first: Int, $after: String, $category: String) {
     products(first: $first, after: $after, where: { category: $category }) {
@@ -6,16 +5,31 @@ export const GET_PRODUCTS = `
         databaseId
         name
         slug
-        price
-        regularPrice
-        salePrice
+
+        ... on SimpleProduct {
+          price
+          regularPrice
+          salePrice
+          stockStatus
+          stockQuantity
+        }
+
+        ... on VariableProduct {
+          price
+          regularPrice
+          salePrice
+          stockStatus
+          stockQuantity
+        }
+
         image {
           sourceUrl
           altText
         }
-        stockStatus
+
         averageRating
         reviewCount
+
         productCategories {
           nodes {
             name
@@ -23,6 +37,7 @@ export const GET_PRODUCTS = `
           }
         }
       }
+
       pageInfo {
         hasNextPage
         endCursor
@@ -32,25 +47,37 @@ export const GET_PRODUCTS = `
 `;
 
 export const GET_PRODUCT = `
-  query GET_PRODUCT($slug: String!) {
-    product(slug: $slug) {
+  query GET_PRODUCT($slug: ID!) {
+    product(id: $slug, idType: SLUG) {
       databaseId
       name
       slug
       description
-      price
-      regularPrice
-      salePrice
-      stockStatus
-      stockQuantity
+
+      ... on SimpleProduct {
+        price
+        regularPrice
+        salePrice
+        stockStatus
+        stockQuantity
+      }
+
+      ... on VariableProduct {
+        price
+        regularPrice
+        salePrice
+        stockStatus
+        stockQuantity
+      }
+
       averageRating
       reviewCount
-      soldThisWeek
-      badge
+
       image {
         sourceUrl
         altText
       }
+
       productCategories {
         nodes {
           name

@@ -144,13 +144,13 @@ export function HeroSection() {
         <div className="flex-1 text-center md:text-left">
           <span className="hero-badge mb-5 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
             <span className="size-1.5 animate-pulse rounded-full bg-primary" />
-            New arrivals in store
+            Powered by TikTok @CampCreekMarket
           </span>
           <h1 className="mb-4 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-5xl">
-            Quality goods,<br className="hidden sm:block" /> curated for you
+            The Camp Creek Market<br className="hidden sm:block" /> Place for same delivery and driver services
           </h1>
           <p className="mx-auto mb-8 max-w-md text-base text-muted-foreground sm:text-lg md:mx-0">
-            Discover hand-picked everyday essentials and thoughtful gifts — made to last.
+            We created a social economic platform that connects local TikTok verified vendors with customers.
           </p>
           <Link
             href="#products"
