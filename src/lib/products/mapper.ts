@@ -7,6 +7,8 @@ import type { Product, ProductListItem } from "@/types";
 export function toProductListItem(product: Product): ProductListItem {
   return {
     id: product.id,
+    databaseId: product.databaseId,
+
     name: product.name,
     slug: product.slug,
 
@@ -22,6 +24,6 @@ export function toProductListItem(product: Product): ProductListItem {
     rating: Number(product.averageRating ?? 0),
     reviewCount: Number(product.reviewCount ?? 0),
 
-    // include anything else your UI needs explicitly
+    productCategories: product.productCategories ?? { nodes: [] },
   };
 }
