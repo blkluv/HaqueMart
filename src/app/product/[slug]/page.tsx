@@ -29,20 +29,15 @@ export default async function ProductPage({ params }: Props) {
         body: JSON.stringify({
           query: `
             query GetProduct($slug: String!) {
-                product(id: $slug, idType: SLUG) {
+              product(id: $slug, idType: SLUG) {
                 databaseId
                 name
                 slug
                 description
-                price
-                regularPrice
-                salePrice
                 stockStatus
                 stockQuantity
                 averageRating
                 reviewCount
-                soldThisWeek
-                badge
                 image {
                   sourceUrl
                   altText
@@ -52,6 +47,23 @@ export default async function ProductPage({ params }: Props) {
                     name
                     slug
                   }
+                }
+                ... on SimpleProduct {
+                  price
+                  regularPrice
+                  salePrice
+                }
+                ... on VariableProduct {
+                  price
+                  regularPrice
+                  salePrice
+                }
+                ... on ExternalProduct {
+                  price
+                  regularPrice
+                }
+                ... on GroupProduct {
+                  price
                 }
               }
             }
@@ -92,11 +104,17 @@ export default async function ProductPage({ params }: Props) {
 
   if (!product) notFound();
 
-  // Safely extract price
+  // Safely extract price (handles numeric or string like "$20 – $50")
   const rawPrice = product.price ?? product.regularPrice ?? product.salePrice ?? "0";
-  const numericPrice = typeof rawPrice === "number" ? rawPrice : parseFloat(String(rawPrice)) || 0;
+  let numericPrice = 0;
+  if (typeof rawPrice === "number") {
+    numericPrice = rawPrice;
+  } else if (typeof rawPrice === "string") {
+    const match = rawPrice.match(/\d+(?:\.\d+)?/);
+    numericPrice = match ? parseFloat(match[0]) : 0;
+  }
 
-  // Build cart item
+  // Build cart item (soldThisWeek and badge removed – add back via custom fields if needed)
   const cartItem = {
     productId: product.databaseId,
     databaseId: product.databaseId,
@@ -120,8 +138,7 @@ export default async function ProductPage({ params }: Props) {
     },
     rating: product.averageRating ?? 0,
     reviewCount: product.reviewCount ?? 0,
-    soldThisWeek: product.soldThisWeek ?? 0,
-    badge: product.badge ?? undefined,
+    // soldThisWeek and badge are omitted because they are not in the WooGraphQL schema by default
   };
 
   return (
