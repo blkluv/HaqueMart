@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function NewsletterSection() {
@@ -9,7 +9,7 @@ export function NewsletterSection() {
       <div className="mx-auto max-w-lg">
         <div className="mb-4 flex justify-center">
           <span className="flex size-12 items-center justify-center rounded-full bg-primary-foreground/15">
-            <Mail className="size-5" />
+            <MessageCircle className="size-5" />
           </span>
         </div>
 

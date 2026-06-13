@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const MESSAGES = [
-  "🎉 Free shipping on orders over $50 — limited time only",
-  "⚡ Flash sale live now — up to 30% off selected items",
-  "🛍️ New arrivals just dropped — shop the latest collection",
+  "🎉 Free shipping on orders in the Camp Creek area",
+  "⚡ Flash sales and livestream shopping events every week",
+  "🛍️ New arrivals posted on @CampCreekMarket TikTok story",
 ];
 
 export function AnnouncementBar() {
