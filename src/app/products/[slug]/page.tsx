@@ -51,12 +51,12 @@ export default async function HomePage({ searchParams }: Props) {
       categories = categoryNames;
     } catch {
       products = MOCK_PRODUCTS;
-      categories = MOCK_CATEGORIES as Category[];
+      categories = MOCK_CATEGORIES as string[];
       usingMock = true;
     }
   } else {
     products = MOCK_PRODUCTS;
-    categories = MOCK_CATEGORIES as Category[];
+    categories = MOCK_CATEGORIES as string[];
     usingMock = true;
   }
 
