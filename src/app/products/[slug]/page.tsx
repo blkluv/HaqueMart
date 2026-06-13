@@ -26,6 +26,21 @@ const CATEGORY_SHOWCASE = [
   { name: "Outdoors", slug: "outdoors", emoji: "🏕️", desc: "Gear up for adventure" },
 ];
 
+function normalizeCategories(input: unknown): Category[] {
+  if (!Array.isArray(input)) return [];
+
+  // if string[]
+  if (typeof input[0] === "string") {
+    return (input as string[]).map((c) => ({
+      name: c,
+      slug: c.toLowerCase().replace(/\s+/g, "-"),
+    }));
+  }
+
+  // if already Category[]
+  return input as Category[];
+}
+
 export default async function HomePage({ searchParams }: Props) {
   const { category, q } = searchParams;
 
@@ -51,12 +66,12 @@ export default async function HomePage({ searchParams }: Props) {
       categories = categoryNames;
     } catch {
       products = MOCK_PRODUCTS;
-      categories = MOCK_CATEGORIES as string[];
+      categories = normalizeCategories(MOCK_CATEGORIES);
       usingMock = true;
     }
   } else {
     products = MOCK_PRODUCTS;
-    categories = MOCK_CATEGORIES as string[];
+    categories = normalizeCategories(MOCK_CATEGORIES);
     usingMock = true;
   }
 
