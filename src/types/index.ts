@@ -15,68 +15,91 @@ export type StockStatus =
   | "OUT_OF_STOCK"
   | "ON_BACKORDER";
 
-/** Minimal product shape used in listing grids */
-export interface ProductListItem {
+// ── Base Product Core (shared raw shape) ──────────────────────────────────────
+
+interface ProductCore {
   id: string;
   databaseId: number;
+
   name: string;
   slug: string;
 
-  /** WooCommerce formatted price string, e.g. "$29.99" */
   price: string | null;
   regularPrice: string | null;
   salePrice: string | null;
 
   stockStatus: StockStatus;
 
-  image: WPImage | null;
-  productCategories: { nodes: ProductCategory[] };
+  stockQuantity?: number | null;
 
-  // ── optional UX / marketing fields ─────────────────────────────────────────
-  rating?: number;
+  averageRating?: number;
   reviewCount?: number;
+
+  image: WPImage | null;
+
+  productCategories: {
+    nodes: ProductCategory[];
+  };
+}
+
+// ── UI / Listing Model ────────────────────────────────────────────────────────
+
+/** Minimal product shape used in listing grids */
+export interface ProductListItem extends ProductCore {
+  // normalized UI fields
+  rating: number;
+  reviewCount: number;
+
+  stockCount: number;
+
   soldThisWeek?: number;
-  stockCount?: number;
+
   badge?: "best-seller" | "trending" | "new";
 }
 
-/** Full product shape used on product detail page */
-export interface Product extends ProductListItem {
+// ── Full Product Detail Model ─────────────────────────────────────────────────
+
+export interface Product extends ProductCore {
   description: string;
   shortDescription: string;
 
   stockQuantity: number | null;
-  galleryImages: { nodes: WPImage[] };
-  averageRating?: number;        // ✅ ADDED – used by product page
-  reviews?: MockReview[];
+
+  galleryImages: {
+    nodes: WPImage[];
+  };
+
+  // UI computed fields (optional on detail page)
+  rating: number;
+  reviewCount: number;
+
+  soldThisWeek?: number;
   viewingSeed?: number;
+
+  reviews?: MockReview[];
 }
 
-// ── Mock review (if you have one) — keep or remove as needed ──────────────────
+// ── Reviews ───────────────────────────────────────────────────────────────────
+
 export interface MockReview {
-  id: string;    // ✅ fixed
+  id: string;
   author: string;
   rating: number;
   date: string;
-  verified?: boolean;
   body: string;
+  verified?: boolean;
 }
 
-// ── Cart types ────────────────────────────────────────────────────────────────
+// ── Cart ──────────────────────────────────────────────────────────────────────
 
 export interface CartItem {
-  /** Unique product identifier used by the cart */
   productId: number;
-
-  /** WooCommerce database ID (often the same as productId) */
   databaseId: number;
 
   name: string;
   slug: string;
 
-  /** Numeric price for calculations */
   price: number;
-  /** Already formatted price string, e.g. "$29.99" */
   priceFormatted: string;
 
   regularPrice: string | null;
@@ -86,14 +109,16 @@ export interface CartItem {
   stockCount?: number;
 
   image: WPImage | null;
-  productCategories: { nodes: ProductCategory[] };
+
+  productCategories: {
+    nodes: ProductCategory[];
+  };
 
   rating?: number;
   reviewCount?: number;
   soldThisWeek?: number;
   badge?: string;
 
-  /** Cart‑specific quantity */
   quantity: number;
 }
 
@@ -105,16 +130,18 @@ export interface Cart {
 
 // ── GraphQL Response Wrappers ────────────────────────────────────────────────
 
+export interface PageInfo {
+  hasNextPage: boolean;
+  endCursor: string | null;
+}
+
 export interface ProductsResponse {
   products: {
-    nodes: ProductListItem[];
-    pageInfo: {
-      hasNextPage: boolean;
-      endCursor: string | null;
-    };
+    nodes: Product[];
+    pageInfo: PageInfo;
   };
 }
 
 export interface ProductResponse {
-  product: Product;
+  product: Product | null;
 }
