@@ -25,97 +25,68 @@ export default async function ProductPage({ params }: Props) {
 
   if (!slug || slug === "undefined") notFound();
 
-  let product = null;
-  let errorMsg = null;
-
   const graphqlUrl =
     process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ||
     process.env.WP_GRAPHQL_URL;
 
-  if (!graphqlUrl) {
-    errorMsg = "Missing GraphQL endpoint environment variable";
-  } else {
-    try {
-      const res = await fetch(graphqlUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: `
-            query GetProduct($slug: String!) {
-              product(id: $slug, idType: SLUG) {
-                databaseId
+  if (!graphqlUrl) notFound();
+
+  const res = await fetch(graphqlUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `
+        query GetProduct($slug: ID!) {
+          product(id: $slug, idType: SLUG) {
+            databaseId
+            name
+            slug
+            description
+            stockQuantity
+            stockStatus
+            averageRating
+            reviewCount
+            image {
+              sourceUrl
+              altText
+            }
+            productCategories {
+              nodes {
                 name
                 slug
-                description
-                stockQuantity
-                stockStatus
-                averageRating
-                reviewCount
-                image {
-                  sourceUrl
-                  altText
-                }
-                productCategories {
-                  nodes {
-                    name
-                    slug
-                  }
-                }
-                ... on SimpleProduct {
-                  price
-                  regularPrice
-                  salePrice
-                }
-                ... on VariableProduct {
-                  price
-                  regularPrice
-                  salePrice
-                }
-                ... on ExternalProduct {
-                  price
-                  regularPrice
-                }
-                ... on GroupProduct {
-                  price
-                }
               }
             }
-          `,
-          variables: { slug },
-        }),
-        next: { revalidate: 60 },
-      });
+            ... on SimpleProduct {
+              price
+              regularPrice
+              salePrice
+            }
+            ... on VariableProduct {
+              price
+              regularPrice
+              salePrice
+            }
+            ... on ExternalProduct {
+              price
+              regularPrice
+            }
+            ... on GroupProduct {
+              price
+            }
+          }
+        }
+      `,
+      variables: { slug },
+    }),
+    next: { revalidate: 60 },
+  });
 
-      const json = await res.json();
+  const json = await res.json();
 
-      if (json.errors) {
-        errorMsg = json.errors[0].message;
-      } else if (!json.data?.product) {
-        errorMsg = "Product not found";
-      } else {
-        product = json.data.product;
-      }
-    } catch (err: any) {
-      errorMsg = err.message;
-    }
-  }
-
-  if (errorMsg) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-800">
-          <h2 className="text-xl font-bold">Something went wrong</h2>
-          <pre className="mt-2 whitespace-pre-wrap text-sm">
-            {errorMsg}
-          </pre>
-        </div>
-      </div>
-    );
-  }
+  const product = json?.data?.product;
 
   if (!product) notFound();
 
-  // ── PRICE NORMALIZATION ────────────────────────────────────────────────
   const rawPrice =
     product.price ??
     product.regularPrice ??
@@ -131,11 +102,7 @@ export default async function ProductPage({ params }: Props) {
     numericPrice = match ? parseFloat(match[0]) : 0;
   }
 
-  // ── SAFE CART ITEM (FIXED TYPE ERROR HERE) ─────────────────────────────
-  const cartItem: Omit<
-    import("@/types").CartItem,
-    "quantity"
-  > = {
+  const cartItem = {
     productId: product.databaseId,
     databaseId: product.databaseId,
     name: product.name || "Unnamed Product",
@@ -152,10 +119,7 @@ export default async function ProductPage({ params }: Props) {
 
     image: {
       sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
-      altText:
-        product.image?.altText ||
-        product.name ||
-        "Product image",
+      altText: product.image?.altText || product.name || "Product image",
     },
 
     productCategories: {
@@ -178,11 +142,7 @@ export default async function ProductPage({ params }: Props) {
           {product.image?.sourceUrl ? (
             <Image
               src={product.image.sourceUrl}
-              alt={
-                product.image.altText ||
-                product.name ||
-                "Product"
-              }
+              alt={product.image.altText || product.name || "Product"}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -206,9 +166,7 @@ export default async function ProductPage({ params }: Props) {
           {product.description && (
             <div
               className="prose text-muted-foreground"
-              dangerouslySetInnerHTML={{
-                __html: product.description,
-              }}
+              dangerouslySetInnerHTML={{ __html: product.description }}
             />
           )}
 
