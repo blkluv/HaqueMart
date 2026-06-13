@@ -12,6 +12,11 @@ interface Props {
   searchParams: { category?: string; q?: string };
 }
 
+type Category = {
+  name: string;
+  slug: string;
+};
+
 const CATEGORY_SHOWCASE = [
   { name: "Bags", slug: "bags", emoji: "👜", desc: "Totes, backpacks & more" },
   { name: "Kitchen", slug: "kitchen", emoji: "☕", desc: "Brew & cook in style" },
@@ -27,7 +32,7 @@ export default async function HomePage({ searchParams }: Props) {
   const searchQuery = q?.trim() ?? "";
 
   let products: ProductListItem[] = [];
-  let categories: string[] = [];
+  let categories: Category[] = [];
   let usingMock = false;
   let hasNextPage = false;
   let endCursor: string | null = null;
@@ -42,15 +47,16 @@ export default async function HomePage({ searchParams }: Props) {
       products = productsResult.nodes;
       hasNextPage = productsResult.hasNextPage;
       endCursor = productsResult.endCursor;
+
       categories = categoryNames;
     } catch {
       products = MOCK_PRODUCTS;
-      categories = MOCK_CATEGORIES;
+      categories = MOCK_CATEGORIES as Category[];
       usingMock = true;
     }
   } else {
     products = MOCK_PRODUCTS;
-    categories = MOCK_CATEGORIES;
+    categories = MOCK_CATEGORIES as Category[];
     usingMock = true;
   }
 
@@ -82,19 +88,15 @@ export default async function HomePage({ searchParams }: Props) {
               All
             </a>
 
-            {categories.map((cat) => {
-              const slug = cat.toLowerCase().replace(/\s+/g, "-");
-
-              return (
-                <a
-                  key={cat}
-                  href={`/?category=${slug}`}
-                  className="rounded-full border px-4 py-1.5 text-sm font-medium"
-                >
-                  {cat}
-                </a>
-              );
-            })}
+            {categories.map((cat) => (
+              <a
+                key={cat.slug}
+                href={`/?category=${cat.slug}`}
+                className="rounded-full border px-4 py-1.5 text-sm font-medium"
+              >
+                {cat.name}
+              </a>
+            ))}
           </div>
         )}
 
