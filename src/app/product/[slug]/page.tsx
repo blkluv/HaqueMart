@@ -35,48 +35,48 @@ export default async function ProductPage({ params }: Props) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      query: `
-        query GetProduct($slug: ID!) {
-          product(id: $slug, idType: SLUG) {
-            databaseId
+    query: `
+    query GetProduct($slug: ID!) {
+      product(id: $slug, idType: URI) {
+        databaseId
+        name
+        slug
+        description
+        stockQuantity
+        stockStatus
+        averageRating
+        reviewCount
+        image {
+          sourceUrl
+          altText
+        }
+        productCategories {
+          nodes {
             name
             slug
-            description
-            stockQuantity
-            stockStatus
-            averageRating
-            reviewCount
-            image {
-              sourceUrl
-              altText
-            }
-            productCategories {
-              nodes {
-                name
-                slug
-              }
-            }
-            ... on SimpleProduct {
-              price
-              regularPrice
-              salePrice
-            }
-            ... on VariableProduct {
-              price
-              regularPrice
-              salePrice
-            }
-            ... on ExternalProduct {
-              price
-              regularPrice
-            }
-            ... on GroupProduct {
-              price
-            }
           }
         }
-      `,
-      variables: { slug },
+        ... on SimpleProduct {
+          price
+          regularPrice
+          salePrice
+        }
+        ... on VariableProduct {
+          price
+          regularPrice
+          salePrice
+        }
+        ... on ExternalProduct {
+          price
+          regularPrice
+        }
+        ... on GroupProduct {
+          price
+        }
+      }
+    }
+  `,
+  variables: { slug },
     }),
     next: { revalidate: 60 },
   });
