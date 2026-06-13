@@ -34,7 +34,6 @@ export default async function ProductPage({ params }: Props) {
                 name
                 slug
                 description
-                stockStatus
                 stockQuantity
                 averageRating
                 reviewCount
@@ -114,7 +113,7 @@ export default async function ProductPage({ params }: Props) {
     numericPrice = match ? parseFloat(match[0]) : 0;
   }
 
-  // Build cart item (soldThisWeek and badge removed – add back via custom fields if needed)
+  // Build cart item (stockStatus defaulted to "IN_STOCK")
   const cartItem = {
     productId: product.databaseId,
     databaseId: product.databaseId,
@@ -124,7 +123,7 @@ export default async function ProductPage({ params }: Props) {
     priceFormatted: formatPrice(numericPrice),
     regularPrice: product.regularPrice ?? null,
     salePrice: product.salePrice ?? null,
-    stockStatus: product.stockStatus || "IN_STOCK",
+    stockStatus: "IN_STOCK",  // default value since stockStatus was removed from query
     stockCount: product.stockQuantity ?? 0,
     image: {
       sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
@@ -138,7 +137,6 @@ export default async function ProductPage({ params }: Props) {
     },
     rating: product.averageRating ?? 0,
     reviewCount: product.reviewCount ?? 0,
-    // soldThisWeek and badge are omitted because they are not in the WooGraphQL schema by default
   };
 
   return (
