@@ -3,21 +3,34 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
 import { ProductActions } from "@/components/ProductActions";
+import type { StockStatus } from "@/types";
 
 interface Props {
-  params: Promise<{ slug: string }> | { slug: string };
+  params: { slug: string };
 }
 
+const mapStockStatus = (status?: string): StockStatus => {
+  switch ((status || "").toLowerCase()) {
+    case "instock":
+      return "IN_STOCK";
+    case "onbackorder":
+      return "ON_BACKORDER";
+    default:
+      return "OUT_OF_STOCK";
+  }
+};
+
 export default async function ProductPage({ params }: Props) {
-  // Handle both Next.js 15 (Promise) and 13/14 (plain object)
-  const slug = "then" in params ? (await params).slug : params.slug;
+  const slug = params.slug;
 
   if (!slug || slug === "undefined") notFound();
 
   let product = null;
   let errorMsg = null;
 
-  const graphqlUrl = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL || process.env.WP_GRAPHQL_URL;
+  const graphqlUrl =
+    process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ||
+    process.env.WP_GRAPHQL_URL;
 
   if (!graphqlUrl) {
     errorMsg = "Missing GraphQL endpoint environment variable";
@@ -35,6 +48,7 @@ export default async function ProductPage({ params }: Props) {
                 slug
                 description
                 stockQuantity
+                stockStatus
                 averageRating
                 reviewCount
                 image {
@@ -86,16 +100,14 @@ export default async function ProductPage({ params }: Props) {
     }
   }
 
-  // Show error clearly if something failed
   if (errorMsg) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10">
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-800">
           <h2 className="text-xl font-bold">Something went wrong</h2>
-          <pre className="mt-2 whitespace-pre-wrap text-sm">{errorMsg}</pre>
-          <p className="mt-4 text-sm">
-            Check your GraphQL endpoint and that the product slug "{slug}" exists.
-          </p>
+          <pre className="mt-2 whitespace-pre-wrap text-sm">
+            {errorMsg}
+          </pre>
         </div>
       </div>
     );
@@ -103,38 +115,58 @@ export default async function ProductPage({ params }: Props) {
 
   if (!product) notFound();
 
-  // Safely extract price (handles numeric or string like "$20 – $50")
-  const rawPrice = product.price ?? product.regularPrice ?? product.salePrice ?? "0";
+  // ── PRICE NORMALIZATION ────────────────────────────────────────────────
+  const rawPrice =
+    product.price ??
+    product.regularPrice ??
+    product.salePrice ??
+    "0";
+
   let numericPrice = 0;
+
   if (typeof rawPrice === "number") {
     numericPrice = rawPrice;
-  } else if (typeof rawPrice === "string") {
-    const match = rawPrice.match(/\d+(?:\.\d+)?/);
+  } else {
+    const match = String(rawPrice).match(/\d+(?:\.\d+)?/);
     numericPrice = match ? parseFloat(match[0]) : 0;
   }
 
-  // Build cart item (stockStatus defaulted to "IN_STOCK")
-  const cartItem = {
+  // ── SAFE CART ITEM (FIXED TYPE ERROR HERE) ─────────────────────────────
+  const cartItem: Omit<
+    import("@/types").CartItem,
+    "quantity"
+  > = {
     productId: product.databaseId,
     databaseId: product.databaseId,
     name: product.name || "Unnamed Product",
     slug: product.slug,
+
     price: numericPrice,
     priceFormatted: formatPrice(numericPrice),
     regularPrice: product.regularPrice ?? null,
     salePrice: product.salePrice ?? null,
-    stockStatus: "IN_STOCK",  // default value since stockStatus was removed from query
+
+    stockStatus: mapStockStatus(product.stockStatus),
+
     stockCount: product.stockQuantity ?? 0,
+
     image: {
       sourceUrl: product.image?.sourceUrl || "/placeholder.jpg",
-      altText: product.image?.altText || product.name || "Product image",
+      altText:
+        product.image?.altText ||
+        product.name ||
+        "Product image",
     },
+
     productCategories: {
-      nodes: (product.productCategories?.nodes || []).map((cat: any) => ({
-        name: cat.name,
-        slug: cat.slug,
-      })),
+      nodes: (product.productCategories?.nodes || []).map(
+        (cat: { name: string; slug: string }) => ({
+          name: cat.name,
+          slug: cat.slug,
+        })
+      ),
     },
+
     rating: product.averageRating ?? 0,
     reviewCount: product.reviewCount ?? 0,
   };
@@ -142,12 +174,15 @@ export default async function ProductPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="grid gap-8 md:grid-cols-2">
-        {/* Product Image */}
         <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
           {product.image?.sourceUrl ? (
             <Image
               src={product.image.sourceUrl}
-              alt={product.image.altText || product.name || "Product"}
+              alt={
+                product.image.altText ||
+                product.name ||
+                "Product"
+              }
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
@@ -159,18 +194,24 @@ export default async function ProductPage({ params }: Props) {
           )}
         </div>
 
-        {/* Product Details */}
         <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-bold">{product.name || "Product"}</h1>
+          <h1 className="text-3xl font-bold">
+            {product.name || "Product"}
+          </h1>
+
           <p className="text-2xl font-semibold text-primary">
             {formatPrice(numericPrice)}
           </p>
+
           {product.description && (
             <div
               className="prose text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: product.description }}
+              dangerouslySetInnerHTML={{
+                __html: product.description,
+              }}
             />
           )}
+
           <ProductActions item={cartItem} />
         </div>
       </div>
