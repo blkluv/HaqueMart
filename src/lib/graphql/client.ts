@@ -2,7 +2,8 @@
 // Supports both a server‑only secret and a public (client‑side) variable.
 const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL || process.env.WP_GRAPHQL_URL;
 
-export const isWpConfigured = !!WP_GRAPHQL_URL;
+// ✅ Fix: make it a function so that existing code calling isWpConfigured() works
+export const isWpConfigured = (): boolean => !!WP_GRAPHQL_URL;
 
 export async function wpgql<T>(
   query: string,
