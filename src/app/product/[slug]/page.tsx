@@ -1,5 +1,3 @@
-// src/app/product/[slug]/page.tsx
-
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
@@ -49,8 +47,6 @@ export default async function ProductPage({ params }: Props) {
             name
             slug
             description
-            stockQuantity
-            stockStatus
             averageRating
             reviewCount
             image {
@@ -67,11 +63,15 @@ export default async function ProductPage({ params }: Props) {
               price
               regularPrice
               salePrice
+              stockStatus
+              stockQuantity
             }
             ... on VariableProduct {
               price
               regularPrice
               salePrice
+              stockStatus
+              stockQuantity
             }
           }
         }
