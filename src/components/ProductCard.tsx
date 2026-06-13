@@ -144,7 +144,7 @@ export function ProductCard({ product }: Props) {
           )}
           {isLowStock && (
             <span className="font-semibold text-red-500">
-              ⚡ Only {product.stockCount} left!
+              🔥 Trending
             </span>
           )}
         </div>
