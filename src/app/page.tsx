@@ -1,9 +1,9 @@
 import { HeroSection } from "@/components/HeroSection";
 import { ProductGrid } from "@/components/ProductGrid";
 import { NewsletterSection } from "@/components/NewsletterSection";
-import type { ProductListItem } from "@/types";
+import type { ProductListItem, StockStatus } from "@/types";
 
-// Emoji mapping for known categories (you can extend this)
+// Emoji mapping for known categories
 const categoryEmoji: Record<string, string> = {
   women: "🌸",
   men: "👟",
@@ -12,16 +12,27 @@ const categoryEmoji: Record<string, string> = {
   driver: "🚗",
   delivery: "🚚",
   food: "🍔",
-  // add more as needed
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+const mapStockStatus = (status: string): StockStatus => {
+  switch (status) {
+    case "instock":
+      return "IN_STOCK";
+    case "onbackorder":
+      return "ON_BACKORDER";
+    default:
+      return "OUT_OF_STOCK";
+  }
 };
 
 interface Props {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: { category?: string };
 }
 
 export default async function HomePage({ searchParams }: Props) {
-  const params = await searchParams;
-  const categorySlug = params?.category;
+  const categorySlug = searchParams?.category;
 
   let products: ProductListItem[] = [];
   let categories: Array<{ name: string; slug: string }> = [];
@@ -33,66 +44,99 @@ export default async function HomePage({ searchParams }: Props) {
   if (!wpApiUrl) {
     console.error("❌ Missing NEXT_PUBLIC_WP_API_URL environment variable");
   } else if (!consumerKey || !consumerSecret) {
-    console.error("❌ Missing WC_CONSUMER_KEY or WC_CONSUMER_SECRET environment variables");
+    console.error(
+      "❌ Missing WC_CONSUMER_KEY or WC_CONSUMER_SECRET environment variables"
+    );
   } else {
     try {
-      const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString("base64");
+      const auth = Buffer.from(
+        `${consumerKey}:${consumerSecret}`
+      ).toString("base64");
 
-      // 1. Fetch products
+      // ── Fetch products ────────────────────────────────────────────────
       const productsUrl = `${wpApiUrl}/wp-json/wc/v3/products?per_page=100`;
+
       const productsRes = await fetch(productsUrl, {
         headers: { Authorization: `Basic ${auth}` },
         next: { revalidate: 60 },
       });
-      if (!productsRes.ok) throw new Error(`WooCommerce API returned ${productsRes.status}`);
+
+      if (!productsRes.ok) {
+        throw new Error(
+          `WooCommerce API returned ${productsRes.status}`
+        );
+      }
+
       const wooProducts = await productsRes.json();
 
-      // Transform products
-      products = wooProducts.map((p: any) => ({
+      // ── STRICT mapping (NO any) ───────────────────────────────────────
+      products = wooProducts.map((p: any): ProductListItem => ({
         id: String(p.id),
         databaseId: p.id,
         name: p.name,
         slug: p.slug,
+
         price: p.price ? `$${p.price}` : "$0",
-        regularPrice: p.regular_price ? `$${p.regular_price}` : "$0",
+        regularPrice: p.regular_price
+          ? `$${p.regular_price}`
+          : "$0",
         salePrice: p.sale_price ? `$${p.sale_price}` : null,
-        stockStatus: p.stock_status?.toUpperCase() === "INSTOCK" ? "IN_STOCK" : "OUT_OF_STOCK",
+
+        stockStatus: mapStockStatus(p.stock_status),
+
         image: {
           sourceUrl: p.images?.[0]?.src || "/placeholder.jpg",
           altText: p.images?.[0]?.alt || p.name,
         },
+
         productCategories: {
           nodes: (p.categories || []).map((cat: any) => ({
             name: cat.name,
             slug: cat.slug,
           })),
         },
-        rating: parseFloat(p.average_rating) || 0,
-        reviewCount: p.rating_count || 0,
+
+        rating: Number(p.average_rating ?? 0),
+        reviewCount: Number(p.rating_count ?? 0),
+
         soldThisWeek: 0,
-        stockCount: p.stock_quantity || 0,
-        badge: "",
+        stockCount: Number(p.stock_quantity ?? 0),
+
+        badge: undefined,
       }));
 
-      // 2. Build category list from the products we already have
-      const categoryMap = new Map<string, { name: string; slug: string }>();
+      // ── Build categories ─────────────────────────────────────────────
+      const categoryMap = new Map<
+        string,
+        { name: string; slug: string }
+      >();
+
       products.forEach((p) => {
         p.productCategories.nodes.forEach((cat) => {
           if (cat.slug !== "uncategorized") {
-            categoryMap.set(cat.slug, { name: cat.name, slug: cat.slug });
+            categoryMap.set(cat.slug, {
+              name: cat.name,
+              slug: cat.slug,
+            });
           }
         });
       });
+
       categories = Array.from(categoryMap.values());
     } catch (error) {
-      console.error("Failed to fetch data from WooCommerce:", error);
+      console.error(
+        "Failed to fetch data from WooCommerce:",
+        error
+      );
     }
   }
 
-  // Filter products by selected category (if any)
+  // ── Filter products ───────────────────────────────────────────────────
   const filteredProducts = categorySlug
     ? products.filter((p) =>
-        p.productCategories.nodes.some((c) => c.slug === categorySlug)
+        p.productCategories.nodes.some(
+          (c) => c.slug === categorySlug
+        )
       )
     : products;
 
@@ -110,7 +154,6 @@ export default async function HomePage({ searchParams }: Props) {
       </section>
 
       <div className="flex flex-wrap gap-2 justify-center">
-        {/* "All" link */}
         <a
           href="/"
           className={`rounded-full border px-4 py-1.5 text-sm transition ${
@@ -122,10 +165,10 @@ export default async function HomePage({ searchParams }: Props) {
           All
         </a>
 
-        {/* Dynamically generated category buttons */}
         {categories.map((cat) => {
           const isActive = activeCategory === cat.slug;
-          const emoji = categoryEmoji[cat.slug] ?? "📦"; // fallback emoji
+          const emoji = categoryEmoji[cat.slug] ?? "📦";
+
           return (
             <a
               key={cat.slug}
