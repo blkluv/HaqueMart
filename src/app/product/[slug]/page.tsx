@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = 0;
 
+// ✅ `params` is now a Promise, which is how Next.js App Router provides it
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 const mapStockStatus = (status?: string): StockStatus => {
@@ -24,9 +25,11 @@ const mapStockStatus = (status?: string): StockStatus => {
 };
 
 export default async function ProductPage({ params }: Props) {
-  const slug = decodeURIComponent(params.slug);
+  // ✅ Await the params Promise before using its properties
+  const { slug: rawSlug } = await params;
 
-  if (!slug) notFound();
+  if (!rawSlug) notFound();
+  const slug = decodeURIComponent(rawSlug);
 
   const graphqlUrl =
     process.env.NEXT_PUBLIC_WP_GRAPHQL_URL ||
@@ -35,6 +38,9 @@ export default async function ProductPage({ params }: Props) {
   if (!graphqlUrl) {
     throw new Error("Missing GraphQL endpoint environment variable");
   }
+
+  // Build variables explicitly to guarantee they're sent
+  const variables = { slug };
 
   const res = await fetch(graphqlUrl, {
     method: "POST",
@@ -76,7 +82,7 @@ export default async function ProductPage({ params }: Props) {
           }
         }
       `,
-      variables: { slug },
+      variables,
     }),
     cache: "no-store",
   });
