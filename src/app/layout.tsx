@@ -1,6 +1,48 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import Link from "next/link";
+import "./globals.css";
+import { CartProvider } from "@/lib/cart/context";
+import { WishlistProvider } from "@/lib/wishlist/context";
+import { Navbar } from "@/components/Navbar";
+import { CartDrawer } from "@/components/CartDrawer";
+import { AnnouncementBar } from "@/components/AnnouncementBar";
+import { SmoothScrollProvider } from "@/components/SmoothScrollProvider";
+import { RevealInit } from "@/components/RevealInit";
 
-// ... keep FOOTER_LINKS and other code above as is ...
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Camp Creek Market — Camp Creek Area Shopify-like marketplace",
+  description:
+    "A modern headless WooCommerce storefront. Browse our curated collection of quality products.",
+};
+
+const FOOTER_LINKS = {
+  Shop: [
+    { label: "All Products", href: "/" },
+    { label: "Bags", href: "/?category=bags" },
+    { label: "Kitchen", href: "/?category=kitchen" },
+    { label: "Home Office", href: "/?category=home-office" },
+    { label: "Clothing", href: "/?category=clothing" },
+    { label: "Home", href: "/?category=home" },
+  ],
+  Help: [
+    { label: "FAQs", href: "#" },
+    { label: "Shipping Info", href: "#" },
+    { label: "Returns & Refunds", href: "#" },
+    { label: "Track Your Order", href: "#" },
+    { label: "Contact Us", href: "#" },
+  ],
+  Company: [
+    { label: "About Us", href: "#" },
+    { label: "Blog", href: "#" },
+    { label: "Press", href: "#" },
+    { label: "Careers", href: "#" },
+  ],
+};
 
 function Footer() {
   return (
@@ -37,7 +79,6 @@ function Footer() {
               The Amazon prime + DoorDash + Shopify of the Camp Creek area.
             </p>
             <div className="mt-4 flex gap-3">
-              {/* Fixed TikTok button */}
               <a
                 href="https://www.tiktok.com/@campcreekmarket"
                 aria-label="TikTok"
@@ -48,9 +89,10 @@ function Footer() {
             </div>
           </div>
 
-          {/* Help & Company links – keep them for structure */}
+          {/* Help & Company columns */}
           {Object.entries(FOOTER_LINKS).map(([heading, links]) => {
-            if (heading === "Shop") return null; // removed the Shop column
+            // Skip Shop column – replaced by TikTok embed
+            if (heading === "Shop") return null;
             return (
               <div key={heading}>
                 <h3 className="mb-3 text-sm font-semibold">{heading}</h3>
@@ -105,5 +147,27 @@ function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+// ✅ This must remain the default export
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="min-h-screen flex flex-col">
+        <SmoothScrollProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <AnnouncementBar />
+              <Navbar />
+              <CartDrawer />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </CartProvider>
+          </WishlistProvider>
+          <RevealInit />
+        </SmoothScrollProvider>
+      </body>
+    </html>
   );
 }
