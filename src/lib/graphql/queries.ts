@@ -5,21 +5,18 @@ export const GET_PRODUCTS = `
         databaseId
         name
         slug
+        __typename
 
         ... on SimpleProduct {
           price
           regularPrice
           salePrice
-          stockStatus
-          stockQuantity
         }
 
         ... on VariableProduct {
           price
           regularPrice
           salePrice
-          stockStatus
-          stockQuantity
         }
 
         image {
@@ -53,21 +50,18 @@ export const GET_PRODUCT = `
       name
       slug
       description
+      __typename
 
       ... on SimpleProduct {
         price
         regularPrice
         salePrice
-        stockStatus
-        stockQuantity
       }
 
       ... on VariableProduct {
         price
         regularPrice
         salePrice
-        stockStatus
-        stockQuantity
       }
 
       averageRating
