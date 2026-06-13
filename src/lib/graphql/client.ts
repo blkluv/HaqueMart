@@ -1,20 +1,24 @@
+// Check if we have a GraphQL endpoint configured.
+// Supports both a server‑only secret and a public (client‑side) variable.
 const WP_GRAPHQL_URL = process.env.NEXT_PUBLIC_WP_GRAPHQL_URL || process.env.WP_GRAPHQL_URL;
 
-if (!WP_GRAPHQL_URL) {
-  throw new Error("Missing GraphQL endpoint environment variable");
-}
+export const isWpConfigured = !!WP_GRAPHQL_URL;
 
 export async function wpgql<T>(
   query: string,
   variables?: Record<string, any>
 ): Promise<T> {
+  if (!WP_GRAPHQL_URL) {
+    throw new Error("Missing GraphQL endpoint environment variable");
+  }
+
   const res = await fetch(WP_GRAPHQL_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ query, variables }),
-    next: { revalidate: 60 }, // optional: ISR cache
+    next: { revalidate: 60 }, // optional ISR cache
   });
 
   if (!res.ok) {
