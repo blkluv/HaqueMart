@@ -29,7 +29,7 @@ export default async function ProductPage({ params }: Props) {
         body: JSON.stringify({
           query: `
             query GetProduct($slug: String!) {
-              product(slug: $slug) {
+                product(id: $slug, idType: SLUG) {
                 databaseId
                 name
                 slug
