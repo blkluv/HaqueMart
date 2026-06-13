@@ -138,10 +138,10 @@ export function ProductCard({ product }: Props) {
         {/* FOMO row */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           {product.soldThisWeek && product.soldThisWeek > 0 && (
-  <span className="text-muted-foreground">
-    🔥 sold this week
-  </span>
-         )}
+            <span className="text-muted-foreground">
+              🔥 sold this week
+            </span>
+          )}
           {isLowStock && (
             <span className="font-semibold text-red-500">
               🔥 Trending
@@ -162,27 +162,27 @@ export function ProductCard({ product }: Props) {
             )}
           </div>
           <AddToCartButton
-  item={{
-    productId: product.databaseId,
-    databaseId: product.databaseId,
-    name: product.name,
-    slug: product.slug,
-    price: parsePrice(product.price ?? product.regularPrice),
-    priceFormatted: product.price ?? product.regularPrice ?? "$0",
-    regularPrice: product.regularPrice,
-    salePrice: product.salePrice,
-    stockStatus: product.stockStatus,
-    image: product.image,
-    productCategories: product.productCategories,
-    rating: product.rating,
-    reviewCount: product.reviewCount,
-    soldThisWeek: product.soldThisWeek,
-    stockCount: product.stockCount,
-    badge: product.badge,
-  }}
-  disabled={isOutOfStock}
-  size="sm"
-/>
+            item={{
+              productId: product.databaseId,
+              databaseId: product.databaseId,
+              name: product.name,
+              slug: product.slug,
+              price: parsePrice(product.price ?? product.regularPrice),
+              priceFormatted: product.price ?? product.regularPrice ?? "$0",
+              regularPrice: product.regularPrice,
+              salePrice: product.salePrice,
+              stockStatus: product.stockStatus,
+              image: product.image,
+              productCategories: product.productCategories,
+              rating: product.rating,
+              reviewCount: product.reviewCount,
+              soldThisWeek: product.soldThisWeek,
+              stockCount: product.stockCount,
+              badge: product.badge,
+            }}
+            disabled={isOutOfStock}
+            size="sm"
+          />
         </div>
       </div>
     </div>
