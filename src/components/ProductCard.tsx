@@ -137,7 +137,8 @@ export function ProductCard({ product }: Props) {
 
         {/* FOMO row */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-          {product.soldThisWeek && product.soldThisWeek > 0 && (
+          {/* ✅ FIXED: removed the truthy check that caused "0" to render */}
+          {product.soldThisWeek > 0 && (
             <span className="text-muted-foreground">
               🔥 sold this week
             </span>
