@@ -135,28 +135,6 @@ export function ProductCard({ product }: Props) {
           <StarRating rating={product.rating} count={product.reviewCount} />
         ) : null}
 
-     {/* FOMO row */}
-<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-  {/* Debug: remove after testing */}
-  {process.env.NODE_ENV === 'development' && (
-    <span className="text-xs text-gray-400">
-      soldThisWeek = {JSON.stringify(product.soldThisWeek)}
-    </span>
-  )}
-
-  {typeof product.soldThisWeek === 'number' && product.soldThisWeek > 0 && (
-    <span className="text-muted-foreground">
-      🔥 sold this week
-    </span>
-  )}
-
-  {isLowStock && (
-    <span className="font-semibold text-red-500">
-      🔥 Trending
-    </span>
-  )}
-</div>
-
         {/* Price + CTA */}
         <div className="mt-auto flex items-center justify-between gap-2 pt-1">
           <div className="flex items-baseline gap-2">
